@@ -1,0 +1,12 @@
+import requests
+import time
+
+while True:
+    data = requests.get("https://api.coindesk.com/v1/bpi/currentprice.json").json()
+
+    print(data)
+
+    with open("data.txt", "a") as f:
+        f.write(str(data) + "\n")
+
+    time.sleep(300)
