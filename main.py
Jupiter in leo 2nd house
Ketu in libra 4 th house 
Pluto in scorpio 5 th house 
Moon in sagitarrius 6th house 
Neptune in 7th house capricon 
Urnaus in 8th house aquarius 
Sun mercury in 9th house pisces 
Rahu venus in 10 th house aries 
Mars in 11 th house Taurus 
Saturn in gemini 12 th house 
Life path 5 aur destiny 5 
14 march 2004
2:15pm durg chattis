@@ -1,12 +1,14 @@
 import requests
-import time
+import datetime
 
-while True:
-    data = requests.get("https://api.coindesk.com/v1/bpi/currentprice.json").json()
+url = "https://api.coindesk.com/v1/bpi/currentprice.json"
 
-    print(data)
+data = requests.get(url).json()
 
-    with open("data.txt", "a") as f:
-        f.write(str(data) + "\n")
+timestamp = datetime.datetime.now()
 
-    time.sleep(300)
+print("Data fetched at:", timestamp)
+print(data)
+
+with open("data.txt", "a") as f:
+    f.write(f"{timestamp} - {data}\n")
