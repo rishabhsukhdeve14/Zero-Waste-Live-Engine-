@@ -1,7 +1,7 @@
 import requests
 import datetime
 
-url = "https://api.coindesk.com/v1/bpi/currentprice.json"
+url = "https://jsonplaceholder.typicode.com/todos/1"
 
 data = requests.get(url).json()
 
