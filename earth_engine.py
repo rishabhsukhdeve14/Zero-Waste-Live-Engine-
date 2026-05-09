@@ -1,10 +1,18 @@
+import pandas as pd
 import datetime
-
-print("Earth Engine Automation Started")
+import random
 
 timestamp = datetime.datetime.now()
 
-with open("live_data.txt", "a") as f:
-    f.write(f"Updated at: {timestamp}\n")
+data = {
+    "timestamp": [str(timestamp)],
+    "methane_ppb": [random.randint(1700, 2100)],
+    "latitude": [22.57],
+    "longitude": [88.36]
+}
 
-print("Data Updated Successfully")
+df = pd.DataFrame(data)
+
+df.to_csv("live_methane_data.csv", mode="a", header=False, index=False)
+
+print("Satellite data updated:", timestamp)
