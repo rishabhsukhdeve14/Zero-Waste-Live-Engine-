@@ -1,5 +1,8 @@
 name: Auto Update
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   schedule:
@@ -24,7 +27,7 @@ jobs:
       - name: Run Script
         run: python earth_engine.py
 
-      - name: Commit CSV
+      - name: Commit and Push CSV
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
