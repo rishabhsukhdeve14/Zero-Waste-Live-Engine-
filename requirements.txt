@@ -1,2 +1,3 @@
-requests
+earthengine-api
 pandas
+requests
