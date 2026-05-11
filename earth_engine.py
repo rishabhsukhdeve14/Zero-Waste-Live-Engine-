@@ -2,13 +2,16 @@ import ee
 import pandas as pd
 import datetime
 
+# Authenticate Earth Engine
+ee.Authenticate()
+
 # Initialize Earth Engine
 ee.Initialize(project='stalwart-fx-490910-e3')
 
-# India Area
+# India region
 india = ee.Geometry.Rectangle([68, 6, 97, 37])
 
-# Sentinel-5P Methane Dataset
+# Sentinel-5P methane dataset
 collection = (
     ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_CH4")
     .select("CH4_column_volume_mixing_ratio_dry_air")
@@ -16,10 +19,10 @@ collection = (
     .sort("system:time_start", False)
 )
 
-# Latest Image
+# Latest image
 image = collection.first()
 
-# Methane Extraction
+# Extract methane value
 stats = image.reduceRegion(
     reducer=ee.Reducer.mean(),
     geometry=india,
@@ -29,8 +32,10 @@ stats = image.reduceRegion(
 
 methane = stats.getInfo()
 
+# Current time
 timestamp = datetime.datetime.now()
 
+# Create dataframe
 data = {
     "timestamp": [str(timestamp)],
     "methane_ppb": [
@@ -43,11 +48,6 @@ data = {
 
 df = pd.DataFrame(data)
 
+# Save CSV
 df.to_csv(
-    "live_methane_data.csv",
-    mode="a",
-    header=False,
-    index=False
-)
-
-print(data)
+    "live_methane
