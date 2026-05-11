@@ -1,13 +1,18 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Zero Waste.Ai", layout="wide")
+# PAGE SETTINGS
+st.set_page_config(
+    page_title="Zero Waste.Ai",
+    layout="wide"
+)
 
+# TITLE
 st.title("🌍 Zero Waste.Ai")
 
 st.subheader("♻️ Multi-Satellite Live Monitoring Engine")
 
-# CSV LOAD
+# LOAD CSV
 df = pd.read_csv(
     "live_methane_data.csv",
     header=None,
@@ -23,39 +28,58 @@ df = pd.read_csv(
     ]
 )
 
-# Convert numeric columns
+# CLEAN DATA
 df["Latitude"] = pd.to_numeric(df["Latitude"], errors="coerce")
 df["Longitude"] = pd.to_numeric(df["Longitude"], errors="coerce")
 df["Methane"] = pd.to_numeric(df["Methane"], errors="coerce")
 
-# Remove bad rows
+# REMOVE BAD ROWS
 df = df.dropna()
 
-# MAIN TABLE
+# LIVE TABLE
 st.subheader("📡 Live Satellite Feed")
 
 st.dataframe(df, use_container_width=True)
 
-# METRICS
+# STATS
 st.subheader("📊 Monitoring Stats")
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Sites", len(df))
-col2.metric("Highest Methane", int(df["Methane"].max()))
-col3.metric("Average Methane", int(df["Methane"].mean()))
+col1.metric(
+    "Total Sites",
+    len(df)
+)
+
+col2.metric(
+    "Highest Methane",
+    str(df["Methane"].max())
+)
+
+col3.metric(
+    "Average Methane",
+    str(round(df["Methane"].mean(), 2))
+)
 
 # TOP POLLUTED
 st.subheader("🔥 Top Methane Sites")
 
-top_sites = df.sort_values(by="Methane", ascending=False)
+top_sites = df.sort_values(
+    by="Methane",
+    ascending=False
+)
 
-st.dataframe(top_sites.head(20), use_container_width=True)
+st.dataframe(
+    top_sites.head(20),
+    use_container_width=True
+)
 
-# CHART
+# BAR CHART
 st.subheader("📈 Methane Levels")
 
-chart_data = top_sites[["City", "Methane"]].head(15)
+chart_data = top_sites[
+    ["City", "Methane"]
+].head(15)
 
 st.bar_chart(
     chart_data.set_index("City")
@@ -83,10 +107,29 @@ satellites = [
     "Landsat-8",
     "Landsat-9",
     "MODIS",
-    "VIIRS"
+    "VIIRS",
+    "MethaneSAT",
+    "GHGSat",
+    "NASA EMIT"
 ]
 
 for sat in satellites:
     st.success(f"{sat} Connected")
 
+# ALERT SYSTEM
+st.subheader("🚨 High Methane Alerts")
+
+alerts = df[df["Methane"] > 2100]
+
+if len(alerts) > 0:
+    st.error("Critical Methane Sites Detected")
+
+    st.dataframe(
+        alerts,
+        use_container_width=True
+    )
+else:
+    st.success("No Critical Alerts")
+
+# FINAL STATUS
 st.success("✅ Zero Waste.Ai Live Monitoring Active")
