@@ -1,14 +1,44 @@
+import ee
 import pandas as pd
 import datetime
-import random
+
+# Initialize Earth Engine
+ee.Initialize(project='stalwart-fx-490910-e3')
+
+# India Area
+india = ee.Geometry.Rectangle([68, 6, 97, 37])
+
+# Sentinel-5P Methane Dataset
+collection = (
+    ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_CH4")
+    .select("CH4_column_volume_mixing_ratio_dry_air")
+    .filterBounds(india)
+    .sort("system:time_start", False)
+)
+
+# Latest Image
+image = collection.first()
+
+# Methane Extraction
+stats = image.reduceRegion(
+    reducer=ee.Reducer.mean(),
+    geometry=india,
+    scale=10000,
+    maxPixels=1e9
+)
+
+methane = stats.getInfo()
 
 timestamp = datetime.datetime.now()
 
 data = {
     "timestamp": [str(timestamp)],
-    "methane_ppb": [random.randint(1800, 2100)],
+    "methane_ppb": [
+        methane["CH4_column_volume_mixing_ratio_dry_air"]
+    ],
     "latitude": [22.57],
-    "longitude": [88.36]
+    "longitude": [88.36],
+    "satellite": ["Sentinel-5P"]
 }
 
 df = pd.DataFrame(data)
@@ -20,5 +50,4 @@ df.to_csv(
     index=False
 )
 
-print("CSV Updated")
 print(data)
