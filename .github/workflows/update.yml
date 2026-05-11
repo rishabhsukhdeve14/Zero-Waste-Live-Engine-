@@ -1,39 +1,19 @@
-name: Auto Satellite Update
-
-permissions:
-contents: write
+name: Auto Update
 
 on:
 workflow_dispatch:
-schedule:
-- cron: "0 * * * *"
 
 jobs:
-satellite-update:
+update:
 runs-on: ubuntu-latest
 
 steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v3
+  - uses: actions/checkout@v3
 
-  - name: Setup Python
-    uses: actions/setup-python@v4
+  - uses: actions/setup-python@v4
     with:
       python-version: "3.11"
 
-  - name: Install Dependencies
-    run: pip install -r requirements.txt
+  - run: pip install pandas requests
 
-  - name: Run Script
-    run: python earth_engine.py
-
-  - name: Commit Updated CSV
-    run: |
-      git config --global user.name "github-actions"
-      git config --global user.email "actions@github.com"
-
-      git add .
-
-      git commit -m "Auto satellite update" || echo "No changes"
-
-      git push
+  - run: python earth_engine.py
