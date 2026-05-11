@@ -24,7 +24,7 @@ steps:
   - name: Install Dependencies
     run: pip install -r requirements.txt
 
-  - name: Run Earth Engine Script
+  - name: Run Script
     run: python earth_engine.py
 
   - name: Commit Updated CSV
