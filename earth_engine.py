@@ -50,4 +50,11 @@ df = pd.DataFrame(data)
 
 # Save CSV
 df.to_csv(
-    "live_methane
+    "live_methane_data.csv",
+    mode="a",
+    header=False,
+    index=False
+)
+
+print("REAL SATELLITE DATA SAVED")
+print(data)
