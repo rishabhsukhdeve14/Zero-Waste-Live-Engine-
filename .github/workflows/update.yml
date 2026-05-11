@@ -8,4 +8,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - run: echo "Working"
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - run: python earth_engine.py
