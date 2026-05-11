@@ -1,45 +1,54 @@
+import ee
 import pandas as pd
-import datetime
-import random
+from datetime import datetime
 
-# Read landfill database
-landfills = pd.read_csv("landfills.csv")
+ee.Initialize(project='YOUR_PROJECT_ID')
 
-all_data = []
+# master landfill file
+df = pd.read_csv("master_landfills.csv")
 
-# Loop through every landfill
-for index, row in landfills.iterrows():
+dataset = ee.ImageCollection("COPERNICUS/S5P/OFFL/L3_CH4") \
+    .select("CH4_column_volume_mixing_ratio_dry_air") \
+    .sort("system:time_start", False)
 
-    timestamp = datetime.datetime.now()
+latest = dataset.first()
 
-    methane = random.randint(1850, 2100)
+results = []
 
-    risk_score = random.randint(1, 10)
+for index, row in df.iterrows():
 
-    data = {
-        "timestamp": str(timestamp),
-        "landfill_id": row["landfill_id"],
-        "state": row["state"],
-        "city": row["city"],
-        "latitude": row["latitude"],
-        "longitude": row["longitude"],
-        "methane_ppb": methane,
-        "satellite": "Sentinel-5P",
-        "risk_score": risk_score
-    }
+    point = ee.Geometry.Point([row['lon'], row['lat']])
 
-    all_data.append(data)
+    value = latest.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=point,
+        scale=1000
+    ).get("CH4_column_volume_mixing_ratio_dry_air")
 
-# Convert to dataframe
-df = pd.DataFrame(all_data)
+    try:
+        methane = ee.Number(value).getInfo()
 
-# Save to CSV
-df.to_csv(
+        results.append([
+            datetime.utcnow(),
+            row['id'],
+            row['state'],
+            row['city'],
+            row['lat'],
+            row['lon'],
+            methane,
+            "Sentinel-5P"
+        ])
+
+    except:
+        pass
+
+out = pd.DataFrame(results)
+
+out.to_csv(
     "live_methane_data.csv",
     mode="a",
     header=False,
     index=False
 )
 
-print("MULTI-LANDFILL DATA UPDATED")
-print(df)
+print("DONE")
