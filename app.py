@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import folium
+from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Waste.Ai", layout="wide")
 
@@ -26,12 +28,13 @@ df.columns = [
 
 # CLEAN DATA
 df["Methane"] = pd.to_numeric(df["Methane"], errors="coerce")
+df["Latitude"] = pd.to_numeric(df["Latitude"], errors="coerce")
+df["Longitude"] = pd.to_numeric(df["Longitude"], errors="coerce")
 
-df = df.dropna(subset=["Methane"])
+df = df.dropna()
 
 # LIVE TABLE
 st.subheader("📡 Live Landfill Sites")
-
 st.dataframe(df)
 
 # STATS
@@ -51,3 +54,55 @@ top_sites = df.sort_values(
 ).head(10)
 
 st.dataframe(top_sites)
+
+# LIVE MAP
+st.subheader("🗺️ Live Landfill Map")
+
+# CREATE MAP
+m = folium.Map(
+    location=[22.5, 80.0],
+    zoom_start=5
+)
+
+# ADD LANDFILL MARKERS
+for _, row in df.iterrows():
+
+    methane = row["Methane"]
+
+    # COLOR CONDITIONS
+    if methane > 2100:
+        color = "red"
+
+    elif methane > 1950:
+        color = "orange"
+
+    else:
+        color = "green"
+
+    folium.CircleMarker(
+        location=[
+            row["Latitude"],
+            row["Longitude"]
+        ],
+
+        radius=8,
+
+        popup=f"""
+        <b>City:</b> {row['City']}<br>
+        <b>State:</b> {row['State']}<br>
+        <b>Methane:</b> {methane}<br>
+        <b>Satellite:</b> {row['Satellite']}
+        """,
+
+        color=color,
+        fill=True,
+        fill_color=color
+
+    ).add_to(m)
+
+# SHOW MAP
+st_folium(
+    m,
+    width=1200,
+    height=600
+)
