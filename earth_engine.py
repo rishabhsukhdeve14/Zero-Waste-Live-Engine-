@@ -2,11 +2,7 @@ import pandas as pd
 import datetime
 import random
 
-Current timestamp
-
 timestamp = datetime.datetime.now()
-
-Simulated methane data
 
 data = {
 "timestamp": [str(timestamp)],
@@ -15,11 +11,7 @@ data = {
 "longitude": [88.36]
 }
 
-Create dataframe
-
 df = pd.DataFrame(data)
-
-Save CSV
 
 df.to_csv(
 "live_methane_data.csv",
@@ -28,4 +20,4 @@ header=False,
 index=False
 )
 
-print("Satellite data updated:", timestamp)
+print(data)
