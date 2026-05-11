@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install pandas
+      - - run: pip install pandas earthengine-api
 
       - run: python earth_engine.py
 
