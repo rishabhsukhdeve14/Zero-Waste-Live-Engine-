@@ -1,17 +1,29 @@
 import streamlit as st
 import pandas as pd
 import folium
+import plotly.express as px
+
 from streamlit_folium import st_folium
 
-st.set_page_config(page_title="Waste.Ai", layout="wide")
+st.set_page_config(
+    page_title="Waste.Ai",
+    layout="wide"
+)
 
+# TITLE
 st.title("🚀 Waste.Ai")
-st.subheader("♻️ Multi-Satellite Live Monitoring Engine")
+
+st.subheader(
+    "♻️ Multi-Satellite Live Monitoring Engine"
+)
 
 # LOAD CSV
-df = pd.read_csv("live_methane_data.csv", header=None)
+df = pd.read_csv(
+    "live_methane_data.csv",
+    header=None
+)
 
-# AUTO FIX EXTRA COLUMNS
+# FIX EXTRA COLUMNS
 df = df.iloc[:, :8]
 
 # COLUMN NAMES
@@ -27,14 +39,26 @@ df.columns = [
 ]
 
 # CLEAN DATA
-df["Methane"] = pd.to_numeric(df["Methane"], errors="coerce")
-df["Latitude"] = pd.to_numeric(df["Latitude"], errors="coerce")
-df["Longitude"] = pd.to_numeric(df["Longitude"], errors="coerce")
+df["Methane"] = pd.to_numeric(
+    df["Methane"],
+    errors="coerce"
+)
+
+df["Latitude"] = pd.to_numeric(
+    df["Latitude"],
+    errors="coerce"
+)
+
+df["Longitude"] = pd.to_numeric(
+    df["Longitude"],
+    errors="coerce"
+)
 
 df = df.dropna()
 
 # LIVE TABLE
 st.subheader("📡 Live Landfill Sites")
+
 st.dataframe(df)
 
 # STATS
@@ -42,10 +66,17 @@ st.subheader("📊 Monitoring Stats")
 
 col1, col2 = st.columns(2)
 
-col1.metric("Total Sites", len(df))
-col2.metric("Highest Methane", int(df["Methane"].max()))
+col1.metric(
+    "Total Sites",
+    len(df)
+)
 
-# ALERTS
+col2.metric(
+    "Highest Methane",
+    int(df["Methane"].max())
+)
+
+# TOP ALERTS
 st.subheader("🚨 Top Methane Alerts")
 
 top_sites = df.sort_values(
@@ -58,18 +89,16 @@ st.dataframe(top_sites)
 # LIVE MAP
 st.subheader("🗺️ Live Landfill Map")
 
-# CREATE MAP
 m = folium.Map(
     location=[22.5, 80.0],
     zoom_start=5
 )
 
-# ADD LANDFILL MARKERS
+# MAP MARKERS
 for _, row in df.iterrows():
 
     methane = row["Methane"]
 
-    # COLOR CONDITIONS
     if methane > 2100:
         color = "red"
 
@@ -85,7 +114,7 @@ for _, row in df.iterrows():
             row["Longitude"]
         ],
 
-        radius=8,
+        radius=10,
 
         popup=f"""
         <b>City:</b> {row['City']}<br>
@@ -105,4 +134,20 @@ st_folium(
     m,
     width=1200,
     height=600
+)
+
+# LIVE TREND GRAPH
+st.subheader("📈 Methane Trend Analysis")
+
+fig = px.line(
+    df,
+    x="Timestamp",
+    y="Methane",
+    color="City",
+    title="Live Methane Emission Trends"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
 )
