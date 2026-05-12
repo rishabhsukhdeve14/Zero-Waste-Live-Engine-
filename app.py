@@ -3,7 +3,20 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import time
+import plotly.express as px
 
+fig = px.density_mapbox(
+    df,
+    lat='lat',
+    lon='lon',
+    z='Methane',
+    radius=20,
+    center=dict(lat=20.59, lon=78.96),
+    zoom=3,
+    mapbox_style="open-street-map"
+)
+
+st.plotly_chart(fig)
 # =========================
 # PAGE CONFIG
 # =========================
