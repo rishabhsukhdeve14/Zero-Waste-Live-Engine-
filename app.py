@@ -171,6 +171,32 @@ fig_map = px.scatter_mapbox(
 fig_map.update_layout(
     mapbox_style="open-street-map"
 )
+# =========================
+# REAL AI PREDICTION ENGINE
+# =========================
+
+from sklearn.linear_model import LinearRegression
+
+st.subheader("🤖 Real AI Methane Prediction Engine")
+
+df["TimeIndex"] = range(len(df))
+
+X = df[["TimeIndex"]]
+
+y = df["Methane"]
+
+model = LinearRegression()
+
+model.fit(X, y)
+
+future_time = [[len(df) + 24]]
+
+prediction = model.predict(future_time)
+
+st.metric(
+    "Predicted Methane Next 24h",
+    round(prediction[0], 2)
+)
 
 st.plotly_chart(
     fig_map,
@@ -197,27 +223,31 @@ st.plotly_chart(
 )
 
 # =========================
-# AI PREDICTION ENGINE
+# REAL AI PREDICTION ENGINE
 # =========================
 
-st.subheader("🤖 AI Methane Prediction Engine")
+from sklearn.linear_model import LinearRegression
 
-future = (
-    df.groupby("City")["Methane"]
-    .mean()
-    .reset_index()
+st.subheader("🤖 Real AI Methane Prediction Engine")
+
+df["TimeIndex"] = range(len(df))
+
+X = df[["TimeIndex"]]
+
+y = df["Methane"]
+
+model = LinearRegression()
+
+model.fit(X, y)
+
+future_time = [[len(df) + 24]]
+
+prediction = model.predict(future_time)
+
+st.metric(
+    "Predicted Methane Next 24h",
+    round(prediction[0], 2)
 )
-
-future["Predicted Next 24h"] = (
-    future["Methane"]
-    + np.random.randint(
-        -50,
-        120,
-        size=len(future)
-    )
-)
-
-st.dataframe(future)
 
 # =========================
 # ESG ENGINE
