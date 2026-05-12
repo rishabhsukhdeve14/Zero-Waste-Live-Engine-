@@ -1,162 +1,73 @@
 import streamlit as st
 import pandas as pd
-import io
+import plotly.express as px
+import folium
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
+import tempfile
 import os
-
-# ========================================
-# PAGE CONFIG
-# ========================================
 
 st.set_page_config(
     page_title="Waste.Ai",
+    page_icon="🚀",
     layout="wide"
 )
 
-# ========================================
-# TITLE
-# ========================================
+# =========================
+# HEADER
+# =========================
 
 st.title("🚀 Waste.Ai")
 st.subheader("♻️ Multi-Satellite Live Monitoring Engine")
 
-# ========================================
-# PDF UPLOAD SECTION
-# ========================================
+# =========================
+# FILE UPLOAD
+# =========================
 
-st.header("📄 Upload Rare Intelligence PDF")
-
-pdf_file = st.file_uploader(
-    "Upload PDF",
-    type=["pdf"]
-)
-
-if pdf_file is not None:
-
-    os.makedirs("uploads", exist_ok=True)
-
-    pdf_path = os.path.join("uploads", pdf_file.name)
-
-    with open(pdf_path, "wb") as f:
-        f.write(pdf_file.getbuffer())
-
-    st.success(f"✅ PDF Uploaded: {pdf_file.name}")
-
-# ========================================
-# CSV / FILE UPLOAD SECTION
-# ========================================
-
-st.header("🚀 Waste.Ai Upload Center")
+st.markdown("## 📂 Upload Intelligence File")
 
 uploaded_file = st.file_uploader(
-    "Upload Any File",
-    type=["csv", "txt", "xlsx", "pdf"]
+    "Upload CSV / TXT / XLSX",
+    type=["csv", "txt", "xlsx"]
 )
 
-# ========================================
-# FILE ANALYSIS
-# ========================================
+df = None
+
+# =========================
+# READ FILE
+# =========================
 
 if uploaded_file is not None:
 
     st.success(f"✅ File Uploaded: {uploaded_file.name}")
 
-    # ====================================
-    # CSV FILE
-    # ====================================
+    try:
 
-    if uploaded_file.name.endswith(".csv"):
+        # CSV
+        if uploaded_file.name.endswith(".csv"):
 
-        try:
+            try:
+                df = pd.read_csv(uploaded_file)
 
-            # READ SMALL PART OF LARGE FILE
-            content = uploaded_file.getvalue().decode(
-                "utf-8",
-                errors="ignore"
-            )
+            except:
+                uploaded_file.seek(0)
 
-            # TAKE FIRST 100 LINES
-            lines = content.splitlines()[:100]
+                try:
+                    df = pd.read_csv(
+                        uploaded_file,
+                        encoding="latin1"
+                    )
 
-            small_csv = "\n".join(lines)
+                except:
+                    uploaded_file.seek(0)
 
-            df = pd.read_csv(
-                io.StringIO(small_csv),
-                on_bad_lines='skip'
-            )
+                    df = pd.read_csv(
+                        uploaded_file,
+                        sep=None,
+                        engine="python"
+                    )
 
-            # PREVIEW
-            st.subheader("📊 CSV Preview")
+        # TXT
+        elif uploaded_file.name.endswith(".txt"):
 
-            st.dataframe(df)
-
-            # DATASET INFO
-            st.subheader("📈 Dataset Insights")
-
-            col1, col2, col3 = st.columns(3)
-
-            col1.metric("Rows", df.shape[0])
-            col2.metric("Columns", df.shape[1])
-            col3.metric(
-                "Missing Values",
-                int(df.isnull().sum().sum())
-            )
-
-            # COLUMN NAMES
-            st.subheader("🧠 Column Names")
-
-            st.write(df.columns.tolist())
-
-            # RAW DATA
-            st.subheader("🔥 Raw Data")
-
-            st.text(content[:5000])
-
-        except Exception as e:
-
-            st.error(f"CSV Error: {e}")
-
-    # ====================================
-    # TXT FILE
-    # ====================================
-
-    elif uploaded_file.name.endswith(".txt"):
-
-        text = uploaded_file.read().decode(
-            "utf-8",
-            errors="ignore"
-        )
-
-        st.subheader("📄 TXT Preview")
-
-        st.text(text[:5000])
-
-    # ====================================
-    # PDF FILE
-    # ====================================
-
-    elif uploaded_file.name.endswith(".pdf"):
-
-        st.subheader("📕 PDF Uploaded Successfully")
-
-        st.write("PDF stored in uploads folder.")
-
-# ========================================
-# AI SECTION
-# ========================================
-
-st.header("🧠 Waste.Ai Intelligence Engine")
-
-st.info("""
-Future AI Features:
-- Methane hotspot prediction
-- Illegal landfill detection
-- ESG risk scoring
-- Satellite anomaly alerts
-- Government intelligence dashboard
-""")
-
-# ========================================
-# FOOTER
-# ========================================
-
-st.caption("Waste.Ai © 2026")
+            df
