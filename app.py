@@ -5,14 +5,19 @@ from sklearn.linear_model import LinearRegression
 import plotly.express as px
 import plotly.graph_objects as go
 
-# ---------------- PAGE CONFIG ----------------
+# =========================================
+# PAGE CONFIG
+# =========================================
 
 st.set_page_config(
     page_title="ZeroWaste.AI",
+    page_icon="🚀",
     layout="wide"
 )
 
-# ---------------- CUSTOM CSS ----------------
+# =========================================
+# CUSTOM CSS
+# =========================================
 
 st.markdown("""
 <style>
@@ -28,21 +33,18 @@ st.markdown("""
     color: #00ffcc;
 }
 
-.section-title {
-    font-size: 35px;
-    font-weight: bold;
-    color: white;
-}
-
-[data-testid="stMetricValue"] {
-    color: #00ff99;
-    font-size: 35px;
+.metric-box {
+    background-color: #161b22;
+    padding: 20px;
+    border-radius: 15px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- TITLE ----------------
+# =========================================
+# HEADER
+# =========================================
 
 st.markdown(
     '<p class="big-title">🚀 ZeroWaste.AI</p>',
@@ -55,33 +57,35 @@ st.markdown("""
 AI + ESG + Methane Intelligence + Smart Waste Detection
 """)
 
-# ---------------- SAMPLE DATA ----------------
+# =========================================
+# AUTO LIVE DATA
+# =========================================
+
+cities = [
+    "Delhi",
+    "Mumbai",
+    "Hyderabad",
+    "Chennai",
+    "Kolkata",
+    "Bangalore",
+    "Pune",
+    "Ahmedabad"
+]
+
+methane_values = np.random.randint(
+    1700,
+    2700,
+    len(cities)
+)
 
 df = pd.DataFrame({
-    "City": [
-        "Delhi",
-        "Mumbai",
-        "Hyderabad",
-        "Chennai",
-        "Kolkata",
-        "Bangalore",
-        "Pune",
-        "Ahmedabad"
-    ],
-
-    "Methane": [
-        2200,
-        1800,
-        2500,
-        1900,
-        2400,
-        2000,
-        1750,
-        2600
-    ]
+    "City": cities,
+    "Methane": methane_values
 })
 
-# ---------------- LAT LON ----------------
+# =========================================
+# AUTO LAT LON
+# =========================================
 
 df["lat"] = np.random.uniform(
     8,
@@ -95,7 +99,34 @@ df["lon"] = np.random.uniform(
     len(df)
 )
 
-# ---------------- AI MODEL ----------------
+# =========================================
+# ESG SCORE
+# =========================================
+
+df["ESG Score"] = np.random.uniform(
+    20,
+    99,
+    len(df)
+).round(1)
+
+# =========================================
+# ALERT ENGINE
+# =========================================
+
+df["Alert"] = df["Methane"].apply(
+    lambda x:
+    "🔴 Critical"
+    if x > 2300
+    else (
+        "🟠 High"
+        if x > 2100
+        else "🟢 Safe"
+    )
+)
+
+# =========================================
+# AI PREDICTION
+# =========================================
 
 df["Index"] = np.arange(len(df))
 
@@ -103,6 +134,7 @@ X = df[["Index"]]
 y = df["Methane"]
 
 model = LinearRegression()
+
 model.fit(X, y)
 
 future = np.array([[len(df) + 24]])
@@ -114,24 +146,9 @@ predicted_value = round(
     2
 )
 
-# ---------------- ESG ----------------
-
-df["ESG Score"] = np.random.uniform(
-    10,
-    99,
-    len(df)
-).round(1)
-
-# ---------------- ALERT ----------------
-
-df["Alert"] = df["Methane"].apply(
-    lambda x:
-    "⚠️ Illegal Waste Zone"
-    if x > 2200
-    else "✅ Safe"
-)
-
-# ---------------- METRICS ----------------
+# =========================================
+# TOP METRICS
+# =========================================
 
 st.markdown("## 📊 Global Intelligence Metrics")
 
@@ -148,8 +165,8 @@ c2.metric(
 )
 
 c3.metric(
-    "High Risk Zones",
-    len(df[df["Methane"] > 2200])
+    "Critical Zones",
+    len(df[df["Methane"] > 2300])
 )
 
 c4.metric(
@@ -157,61 +174,58 @@ c4.metric(
     predicted_value
 )
 
-# ---------------- AI PREDICTION ----------------
+# =========================================
+# MAIN DATAFRAME
+# =========================================
 
-st.markdown(
-    "## 🤖 Real AI Methane Prediction Engine"
+st.markdown("## 🌍 Live Intelligence Feed")
+
+st.dataframe(
+    df,
+    use_container_width=True
 )
 
-st.metric(
-    "Predicted Methane Next 24h",
-    predicted_value
+# =========================================
+# AI PREDICTION PANEL
+# =========================================
+
+st.markdown("## 🤖 AI Methane Prediction")
+
+st.success(
+    f"Predicted methane level in next 24h: {predicted_value}"
 )
 
-# ---------------- LINE CHART ----------------
+# =========================================
+# LINE CHART
+# =========================================
 
 st.markdown("## 📈 Methane Trend Analysis")
 
-st.line_chart(df["Methane"])
-
-# ---------------- ESG TABLE ----------------
-
-st.markdown("## 🌍 ESG Risk Intelligence")
-
-st.dataframe(df)
-
-# ---------------- ALERT TABLE ----------------
-
-st.markdown("## 🚨 Illegal Waste Detection")
-
-danger = df[df["Methane"] > 2200]
-
-if len(danger) > 0:
-
-    st.error(
-        "⚠️ HIGH RISK ZONES DETECTED"
-    )
-
-    st.dataframe(danger)
-
-else:
-
-    st.success(
-        "✅ No Dangerous Zones"
-    )
-
-# ---------------- HEATMAP ----------------
-
-st.markdown(
-    "## 🛰️ Satellite Methane Heatmap"
+fig_line = px.line(
+    df,
+    x="City",
+    y="Methane",
+    markers=True,
+    title="Methane Intelligence Trend"
 )
 
-fig = px.density_mapbox(
+st.plotly_chart(
+    fig_line,
+    use_container_width=True
+)
+
+# =========================================
+# HEATMAP
+# =========================================
+
+st.markdown("## 🛰️ Satellite Methane Heatmap")
+
+fig_map = px.density_mapbox(
     df,
     lat="lat",
     lon="lon",
     z="Methane",
-    radius=25,
+    radius=30,
     center=dict(
         lat=20.59,
         lon=78.96
@@ -221,25 +235,40 @@ fig = px.density_mapbox(
 )
 
 st.plotly_chart(
-    fig,
+    fig_map,
     use_container_width=True
 )
 
-# ---------------- LIVE MAP ----------------
+# =========================================
+# LIVE MAP
+# =========================================
 
-st.markdown(
-    "## 🌎 Live Waste Intelligence Map"
-)
+st.markdown("## 🌎 Live Waste Intelligence Map")
 
 st.map(
     df[["lat", "lon"]]
 )
 
-# ---------------- PIE CHART ----------------
+# =========================================
+# ESG TABLE
+# =========================================
 
-st.markdown(
-    "## ♻️ Risk Distribution"
+st.markdown("## 🌱 ESG Intelligence")
+
+st.dataframe(
+    df[[
+        "City",
+        "Methane",
+        "ESG Score",
+        "Alert"
+    ]]
 )
+
+# =========================================
+# PIE CHART
+# =========================================
+
+st.markdown("## ♻️ Risk Distribution")
 
 risk_counts = df["Alert"].value_counts()
 
@@ -257,20 +286,25 @@ st.plotly_chart(
     use_container_width=True
 )
 
-# ---------------- TOP CITIES ----------------
+# =========================================
+# TOP DANGEROUS CITIES
+# =========================================
 
-st.markdown(
-    "## ☢️ Top Dangerous Cities"
-)
+st.markdown("## ☢️ Top Dangerous Cities")
 
 top_danger = df.sort_values(
     by="Methane",
     ascending=False
-).head(10)
+)
 
-st.dataframe(top_danger)
+st.dataframe(
+    top_danger.head(10),
+    use_container_width=True
+)
 
-# ---------------- DOWNLOAD REPORT ----------------
+# =========================================
+# DOWNLOAD REPORT
+# =========================================
 
 csv = df.to_csv(
     index=False
@@ -283,11 +317,11 @@ st.download_button(
     "text/csv"
 )
 
-# ---------------- AI INSIGHTS ----------------
+# =========================================
+# AI INSIGHTS
+# =========================================
 
-st.markdown(
-    "## 🧠 AI Intelligence Insights"
-)
+st.markdown("## 🧠 AI Intelligence Insights")
 
 highest_city = df.loc[
     df["Methane"].idxmax()
@@ -306,7 +340,9 @@ Immediate satellite inspection recommended.
 
 """)
 
-# ---------------- FOOTER ----------------
+# =========================================
+# FOOTER
+# =========================================
 
 st.markdown("---")
 
@@ -314,14 +350,14 @@ st.markdown("""
 
 ## 🚀 ZeroWaste.AI Intelligence Core
 
-Future AI Features:
-
-- Methane hotspot prediction
+Future AI Systems:
+- Real satellite integration
 - Illegal landfill detection
-- ESG risk scoring
-- Satellite anomaly alerts
-- Government intelligence dashboard
 - Carbon emission AI
 - Smart city intelligence
+- Climate risk engine
+- Government ESG dashboard
+- AI anomaly detection
+- Global methane monitoring
 
 """)
