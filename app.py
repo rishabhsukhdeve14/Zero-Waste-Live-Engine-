@@ -73,8 +73,7 @@ AI + ESG + Methane Intelligence + Smart Waste Detection
 
 # ---------------- LOAD DATA ----------------
 
-if uploaded_file is not None:
-
+if True:
     # -------- READ FILE --------
 
     try:
