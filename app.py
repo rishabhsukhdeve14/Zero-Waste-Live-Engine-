@@ -1,313 +1,308 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from sklearn.linear_model import LinearRegression
 import plotly.express as px
-import time
-import plotly.express as px
+import plotly.graph_objects as go
 
-fig = px.density_mapbox(
-    df,
-    lat='lat',
-    lon='lon',
-    z='Methane',
-    radius=20,
-    center=dict(lat=20.59, lon=78.96),
-    zoom=3,
-    mapbox_style="open-street-map"
-)
-
-st.plotly_chart(fig)
-# =========================
-# PAGE CONFIG
-# =========================
+# ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
-    page_title="ZeroWaste.Ai",
+    page_title="ZeroWaste.AI",
     layout="wide"
 )
 
-# =========================
-# HEADER
-# =========================
+# ---------------- CUSTOM CSS ----------------
 
 st.markdown("""
-# 🌎 ZERO WASTE GLOBAL COMMAND CENTER
+<style>
+.main {
+    background-color: #0e1117;
+    color: white;
+}
 
-### AI-Powered Climate Intelligence Platform
+h1, h2, h3 {
+    color: white;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 35px;
+    color: #00ff99;
+}
+
+.stDataFrame {
+    border-radius: 15px;
+}
+
+.big-title {
+    font-size: 55px;
+    font-weight: bold;
+    color: #00ffcc;
+}
+
+.section-title {
+    font-size: 35px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.alert-box {
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #ff4b4b;
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- TITLE ----------------
+
+st.markdown('<p class="big-title">🚀 ZeroWaste.AI</p>', unsafe_allow_html=True)
+
+st.markdown("""
+## ♻️ Multi-Satellite Intelligence Dashboard
+
+AI + ESG + Methane Intelligence + Smart Waste Detection
 """)
 
-st.title("🚀 ZeroWaste.Ai")
+# ---------------- FILE UPLOAD ----------------
 
-st.subheader("♻️ Multi-Satellite Live Monitoring Engine")
+uploaded_file = st.file_uploader(
+    "Upload CSV / TXT / XLSX",
+    type=["csv", "txt", "xlsx"],
+    key="main_uploader"
+)
 
-# =========================
-# LIVE SATELLITE DATA ENGINE
-# =========================
+# ---------------- LOAD DATA ----------------
 
-cities = [
-    "Mumbai",
-    "Delhi",
-    "Kolkata",
-    "Hyderabad",
-    "Chennai"
-]
+if uploaded_file is not None:
 
-data = []
+    # -------- READ FILE --------
 
-for i in range(50):
+    try:
 
-    city = np.random.choice(cities)
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
 
-    methane = np.random.randint(1800, 2300)
+        elif uploaded_file.name.endswith(".txt"):
+            df = pd.read_csv(uploaded_file)
 
-    if city == "Mumbai":
-        lat, lon = 19.0760, 72.8777
+        elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file)
 
-    elif city == "Delhi":
-        lat, lon = 28.6139, 77.2090
+        st.success("✅ File Uploaded Successfully")
 
-    elif city == "Kolkata":
-        lat, lon = 22.5726, 88.3639
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+        st.stop()
 
-    elif city == "Hyderabad":
-        lat, lon = 17.3850, 78.4867
+    # ---------------- REQUIRED COLUMNS CHECK ----------------
+
+    required_columns = ["City", "Methane"]
+
+    for col in required_columns:
+        if col not in df.columns:
+            st.error(f"Missing Required Column: {col}")
+            st.stop()
+
+    # ---------------- AUTO CREATE LAT LON ----------------
+
+    if "lat" not in df.columns:
+        df["lat"] = np.random.uniform(8, 35, len(df))
+
+    if "lon" not in df.columns:
+        df["lon"] = np.random.uniform(68, 97, len(df))
+
+    # ---------------- AI PREDICTION ----------------
+
+    df["Index"] = np.arange(len(df))
+
+    X = df[["Index"]]
+    y = df["Methane"]
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    future = np.array([[len(df) + 24]])
+
+    prediction = model.predict(future)
+
+    predicted_value = round(float(prediction[0]), 2)
+
+    # ---------------- ESG SCORE ----------------
+
+    df["ESG Score"] = np.random.uniform(10, 99, len(df)).round(1)
+
+    # ---------------- RISK ALERT ----------------
+
+    df["Alert"] = df["Methane"].apply(
+        lambda x: "⚠️ Illegal Waste Zone" if x > 2200 else "✅ Safe"
+    )
+
+    # ---------------- TOP METRICS ----------------
+
+    st.markdown("## 📊 Global Intelligence Metrics")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Cities Scanned", len(df))
+
+    col2.metric(
+        "Average Methane",
+        round(df["Methane"].mean(), 2)
+    )
+
+    col3.metric(
+        "High Risk Zones",
+        len(df[df["Methane"] > 2200])
+    )
+
+    col4.metric(
+        "Predicted Next 24h",
+        predicted_value
+    )
+
+    # ---------------- AI PREDICTION ENGINE ----------------
+
+    st.markdown("## 🤖 Real AI Methane Prediction Engine")
+
+    st.metric(
+        "Predicted Methane Next 24h",
+        predicted_value
+    )
+
+    # ---------------- METHANE CHART ----------------
+
+    st.markdown("## 📈 Methane Trend Analysis")
+
+    st.line_chart(df["Methane"])
+
+    # ---------------- ESG TABLE ----------------
+
+    st.markdown("## 🌍 ESG Risk Intelligence")
+
+    st.dataframe(df)
+
+    # ---------------- ALERT TABLE ----------------
+
+    st.markdown("## 🚨 Illegal Waste Detection")
+
+    danger = df[df["Methane"] > 2200]
+
+    if len(danger) > 0:
+        st.error("⚠️ HIGH RISK ZONES DETECTED")
+        st.dataframe(danger)
 
     else:
-        lat, lon = 13.0827, 80.2707
+        st.success("✅ No Dangerous Zones Detected")
 
-    data.append({
-        "Timestamp": pd.Timestamp.now(),
-        "City": city,
-        "Methane": methane,
-        "Latitude": lat,
-        "Longitude": lon
-    })
+    # ---------------- HEATMAP ----------------
 
-# =========================
-# DATAFRAME
-# =========================
+    st.markdown("## 🛰️ Satellite Methane Heatmap")
 
-df = pd.DataFrame(data)
-
-# =========================
-# ALERT ENGINE
-# =========================
-
-def get_alert(methane):
-
-    if methane > 2200:
-        return "🔴 Critical"
-
-    elif methane > 2000:
-        return "🟠 High"
-
-    else:
-        return "🟢 Safe"
-
-df["Threat"] = df["Methane"].apply(get_alert)
-
-# =========================
-# LIVE TABLE
-# =========================
-
-st.subheader("📡 Live Landfill Intelligence Feed")
-
-st.dataframe(
-    df[[
-        "Timestamp",
-        "City",
-        "Methane",
-        "Threat"
-    ]]
-)
-
-# =========================
-# MONITORING STATS
-# =========================
-
-st.subheader("📊 Monitoring Stats")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric(
-        "Total Sites",
-        len(df)
+    fig = px.density_mapbox(
+        df,
+        lat='lat',
+        lon='lon',
+        z='Methane',
+        radius=25,
+        center=dict(lat=20.59, lon=78.96),
+        zoom=3,
+        mapbox_style="open-street-map"
     )
 
-with col2:
-    st.metric(
-        "Highest Methane",
-        int(df["Methane"].max())
+    st.plotly_chart(fig, use_container_width=True)
+
+    # ---------------- LIVE MAP ----------------
+
+    st.markdown("## 🌎 Live Waste Intelligence Map")
+
+    st.map(df[["lat", "lon"]])
+
+    # ---------------- PIE CHART ----------------
+
+    st.markdown("## ♻️ Risk Distribution")
+
+    risk_counts = df["Alert"].value_counts()
+
+    pie = go.Figure(
+        data=[go.Pie(
+            labels=risk_counts.index,
+            values=risk_counts.values
+        )]
     )
 
-with col3:
-    critical_count = len(
-        df[df["Threat"] == "🔴 Critical"]
+    st.plotly_chart(pie, use_container_width=True)
+
+    # ---------------- TOP DANGEROUS CITIES ----------------
+
+    st.markdown("## ☢️ Top Dangerous Cities")
+
+    top_danger = df.sort_values(
+        by="Methane",
+        ascending=False
+    ).head(10)
+
+    st.dataframe(top_danger)
+
+    # ---------------- DOWNLOAD REPORT ----------------
+
+    csv = df.to_csv(index=False).encode('utf-8')
+
+    st.download_button(
+        "⬇️ Download Intelligence Report",
+        csv,
+        "ZeroWaste_AI_Report.csv",
+        "text/csv"
     )
 
-    st.metric(
-        "Critical Alerts",
-        critical_count
+    # ---------------- AI INSIGHTS ----------------
+
+    st.markdown("## 🧠 AI Intelligence Insights")
+
+    highest_city = df.loc[df["Methane"].idxmax()]
+
+    st.warning(
+        f"""
+        Highest methane detected in {highest_city['City']}
+
+        Methane Level: {highest_city['Methane']}
+
+        AI Recommendation:
+        Immediate satellite inspection recommended.
+        """
     )
 
-# =========================
-# TOP ALERTS
-# =========================
+# ---------------- NO FILE ----------------
 
-st.subheader("🚨 Top Methane Alerts")
+else:
 
-top_alerts = df.sort_values(
-    by="Methane",
-    ascending=False
-).head(10)
+    st.info("""
+    👆 Upload your methane intelligence CSV file to activate:
+    
+    ✅ AI prediction  
+    ✅ ESG scoring  
+    ✅ Satellite heatmaps  
+    ✅ Illegal waste detection  
+    ✅ Government intelligence dashboard  
+    ✅ Smart analytics  
+    """)
 
-st.dataframe(top_alerts)
-
-# =========================
-# LIVE MAP
-# =========================
-
-st.subheader("🗺️ Satellite Methane Heatmap")
-
-fig_map = px.scatter_mapbox(
-    df,
-    lat="Latitude",
-    lon="Longitude",
-    size="Methane",
-    color="Methane",
-    hover_name="City",
-    zoom=3,
-    height=600
-)
-
-fig_map.update_layout(
-    mapbox_style="open-street-map"
-)
-# =========================
-# REAL AI PREDICTION ENGINE
-# =========================
-
-from sklearn.linear_model import LinearRegression
-
-st.subheader("🤖 Real AI Methane Prediction Engine")
-
-df["TimeIndex"] = range(len(df))
-
-X = df[["TimeIndex"]]
-
-y = df["Methane"]
-
-model = LinearRegression()
-
-model.fit(X, y)
-
-future_time = [[len(df) + 24]]
-
-prediction = model.predict(future_time)
-
-st.metric(
-    "Predicted Methane Next 24h",
-    round(prediction[0], 2)
-)
-
-st.plotly_chart(
-    fig_map,
-    use_container_width=True
-)
-
-# =========================
-# TREND ANALYSIS
-# =========================
-
-st.subheader("📈 Methane Trend Analysis")
-
-fig = px.line(
-    df,
-    x="Timestamp",
-    y="Methane",
-    color="City",
-    title="Live Methane Emission Trends"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-# =========================
-# REAL AI PREDICTION ENGINE
-# =========================
-
-from sklearn.linear_model import LinearRegression
-
-st.subheader("🤖 Real AI Methane Prediction Engine")
-
-df["TimeIndex"] = range(len(df))
-
-X = df[["TimeIndex"]]
-
-y = df["Methane"]
-
-model = LinearRegression()
-
-model.fit(X, y)
-
-future_time = [[len(df) + 24]]
-
-prediction = model.predict(future_time)
-
-st.metric(
-    "Predicted Methane Next 24h",
-    round(prediction[0], 2)
-)
-
-# =========================
-# ESG ENGINE
-# =========================
-
-st.subheader("🌍 ESG Risk Intelligence")
-
-df["ESG Score"] = (
-    100 - (
-        (df["Methane"] - 1800) / 5
-    )
-)
-
-st.dataframe(
-    df[[
-        "City",
-        "Methane",
-        "ESG Score"
-    ]].head(10)
-)
-
-# =========================
-# AI CORE
-# =========================
+# ---------------- FOOTER ----------------
 
 st.markdown("---")
 
 st.markdown("""
-## 🧠 ZeroWaste.Ai Intelligence Core
+### 🚀 ZeroWaste.AI Intelligence Core
 
-### Future AI Features:
+Future AI Features:
 - Methane hotspot prediction
 - Illegal landfill detection
 - ESG risk scoring
 - Satellite anomaly alerts
 - Government intelligence dashboard
-- Carbon credit intelligence
-- AI waste heatmaps
-- Climate risk prediction engine
-- AI climate command system
-- Global landfill monitoring
+- Carbon emission AI
+- Smart city intelligence
 """)
-
-# =========================
-# AUTO REFRESH
-# =========================
-
-time.sleep(5)
-
-st.rerun()
