@@ -6,11 +6,31 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # ---------------- PAGE CONFIG ----------------
+try:
+
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+
+    elif uploaded_file.name.endswith(".txt"):
+        df = pd.read_csv(uploaded_file)
+
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file)
+
+    st.success("✅ File Uploaded Successfully")
+
+except Exception as e:
+    st.error(f"Error reading file: {e}")
+    st.stop()
 
 st.set_page_config(
     page_title="ZeroWaste.AI",
     layout="wide"
 )
+df = pd.DataFrame({
+    "City": ["Delhi", "Mumbai", "Hyderabad", "Chennai", "Kolkata"],
+    "Methane": [2100, 1950, 2400, 1800, 2250]
+})
 
 # ---------------- CUSTOM CSS ----------------
 
