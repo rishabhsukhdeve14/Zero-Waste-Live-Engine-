@@ -5,14 +5,14 @@ from sklearn.linear_model import LinearRegression
 import plotly.express as px
 import plotly.graph_objects as go
 
-# ---------------- PAGE ----------------
+# ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
     page_title="ZeroWaste.AI",
     layout="wide"
 )
 
-# ---------------- STYLE ----------------
+# ---------------- CUSTOM CSS ----------------
 
 st.markdown("""
 <style>
@@ -34,12 +34,20 @@ st.markdown("""
     color: white;
 }
 
+[data-testid="stMetricValue"] {
+    color: #00ff99;
+    font-size: 35px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------- TITLE ----------------
 
-st.markdown('<p class="big-title">🚀 ZeroWaste.AI</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="big-title">🚀 ZeroWaste.AI</p>',
+    unsafe_allow_html=True
+)
 
 st.markdown("""
 # ♻️ Multi-Satellite Intelligence Dashboard
@@ -47,7 +55,7 @@ st.markdown("""
 AI + ESG + Methane Intelligence + Smart Waste Detection
 """)
 
-# ---------------- REAL DATA ----------------
+# ---------------- SAMPLE DATA ----------------
 
 df = pd.DataFrame({
     "City": [
@@ -57,7 +65,8 @@ df = pd.DataFrame({
         "Chennai",
         "Kolkata",
         "Bangalore",
-        "Pune"
+        "Pune",
+        "Ahmedabad"
     ],
 
     "Methane": [
@@ -67,14 +76,24 @@ df = pd.DataFrame({
         1900,
         2400,
         2000,
-        1750
+        1750,
+        2600
     ]
 })
 
 # ---------------- LAT LON ----------------
 
-df["lat"] = np.random.uniform(8, 35, len(df))
-df["lon"] = np.random.uniform(68, 97, len(df))
+df["lat"] = np.random.uniform(
+    8,
+    35,
+    len(df)
+)
+
+df["lon"] = np.random.uniform(
+    68,
+    97,
+    len(df)
+)
 
 # ---------------- AI MODEL ----------------
 
@@ -90,7 +109,10 @@ future = np.array([[len(df) + 24]])
 
 prediction = model.predict(future)
 
-predicted_value = round(float(prediction[0]), 2)
+predicted_value = round(
+    float(prediction[0]),
+    2
+)
 
 # ---------------- ESG ----------------
 
@@ -135,22 +157,24 @@ c4.metric(
     predicted_value
 )
 
-# ---------------- PREDICTION ----------------
+# ---------------- AI PREDICTION ----------------
 
-st.markdown("## 🤖 Real AI Methane Prediction Engine")
+st.markdown(
+    "## 🤖 Real AI Methane Prediction Engine"
+)
 
 st.metric(
     "Predicted Methane Next 24h",
     predicted_value
 )
 
-# ---------------- CHART ----------------
+# ---------------- LINE CHART ----------------
 
 st.markdown("## 📈 Methane Trend Analysis")
 
 st.line_chart(df["Methane"])
 
-# ---------------- TABLE ----------------
+# ---------------- ESG TABLE ----------------
 
 st.markdown("## 🌍 ESG Risk Intelligence")
 
@@ -164,17 +188,23 @@ danger = df[df["Methane"] > 2200]
 
 if len(danger) > 0:
 
-    st.error("⚠️ HIGH RISK ZONES DETECTED")
+    st.error(
+        "⚠️ HIGH RISK ZONES DETECTED"
+    )
 
     st.dataframe(danger)
 
 else:
 
-    st.success("✅ No Dangerous Zones")
+    st.success(
+        "✅ No Dangerous Zones"
+    )
 
 # ---------------- HEATMAP ----------------
 
-st.markdown("## 🛰️ Satellite Methane Heatmap")
+st.markdown(
+    "## 🛰️ Satellite Methane Heatmap"
+)
 
 fig = px.density_mapbox(
     df,
@@ -182,7 +212,10 @@ fig = px.density_mapbox(
     lon="lon",
     z="Methane",
     radius=25,
-    center=dict(lat=20.59, lon=78.96),
+    center=dict(
+        lat=20.59,
+        lon=78.96
+    ),
     zoom=3,
     mapbox_style="open-street-map"
 )
@@ -194,13 +227,19 @@ st.plotly_chart(
 
 # ---------------- LIVE MAP ----------------
 
-st.markdown("## 🌎 Live Waste Intelligence Map")
+st.markdown(
+    "## 🌎 Live Waste Intelligence Map"
+)
 
-st.map(df[["lat", "lon"]])
+st.map(
+    df[["lat", "lon"]]
+)
 
-# ---------------- PIE ----------------
+# ---------------- PIE CHART ----------------
 
-st.markdown("## ♻️ Risk Distribution")
+st.markdown(
+    "## ♻️ Risk Distribution"
+)
 
 risk_counts = df["Alert"].value_counts()
 
@@ -220,7 +259,9 @@ st.plotly_chart(
 
 # ---------------- TOP CITIES ----------------
 
-st.markdown("## ☢️ Top Dangerous Cities")
+st.markdown(
+    "## ☢️ Top Dangerous Cities"
+)
 
 top_danger = df.sort_values(
     by="Methane",
@@ -229,9 +270,11 @@ top_danger = df.sort_values(
 
 st.dataframe(top_danger)
 
-# ---------------- DOWNLOAD ----------------
+# ---------------- DOWNLOAD REPORT ----------------
 
-csv = df.to_csv(index=False).encode("utf-8")
+csv = df.to_csv(
+    index=False
+).encode("utf-8")
 
 st.download_button(
     "⬇️ Download Intelligence Report",
@@ -240,11 +283,15 @@ st.download_button(
     "text/csv"
 )
 
-# ---------------- AI INSIGHT ----------------
+# ---------------- AI INSIGHTS ----------------
 
-st.markdown("## 🧠 AI Intelligence Insights")
+st.markdown(
+    "## 🧠 AI Intelligence Insights"
+)
 
-highest_city = df.loc[df["Methane"].idxmax()]
+highest_city = df.loc[
+    df["Methane"].idxmax()
+]
 
 st.warning(f"""
 
