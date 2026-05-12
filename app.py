@@ -330,3 +330,26 @@ if uploaded_file is not None:
 
         except Exception as e:
             st.error(f"Error reading CSV: {e}")
+if uploaded_file is not None:
+
+    if uploaded_file.name.endswith(".csv"):
+
+        try:
+            df = pd.read_csv(uploaded_file, low_memory=False)
+
+            st.subheader("📊 CSV Preview")
+            st.dataframe(df.head(100))
+
+            st.subheader("📈 Dataset Insights")
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("Rows", len(df))
+            col2.metric("Columns", len(df.columns))
+            col3.metric("Missing Values", df.isnull().sum().sum())
+
+            st.subheader("🧠 Column Names")
+            st.write(df.columns.tolist())
+
+        except Exception as e:
+            st.error(f"Error reading CSV: {e}")
