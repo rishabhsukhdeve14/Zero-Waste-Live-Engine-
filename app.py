@@ -465,8 +465,14 @@ st.markdown("## 🤖 AI Recommendations")
 highest = df.loc[df["Methane"].idxmax()]
 
 st.warning(f"""
+if predicted_value > 3000:
+    st.error("Critical methane concentration detected")
 
-⚠️ Critical methane concentration detected in:
+elif predicted_value > 2200:
+    st.warning("Methane levels rising")
+
+else:
+    st.success("Environment stable")
 
 CITY: {highest['City']}
 
