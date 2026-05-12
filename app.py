@@ -302,3 +302,31 @@ if uploaded_file is not None:
 
     else:
         st.info("File uploaded successfully.")
+# CSV ANALYSIS
+
+if uploaded_file is not None:
+
+    if uploaded_file.name.endswith(".csv"):
+
+        try:
+            df = pd.read_csv(uploaded_file)
+
+            st.subheader("📊 Uploaded Data Preview")
+            st.dataframe(df)
+
+            st.subheader("📈 Dataset Insights")
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("Rows", len(df))
+            col2.metric("Columns", len(df.columns))
+            col3.metric("Missing Values", df.isnull().sum().sum())
+
+            st.subheader("🧠 Column Names")
+            st.write(df.columns.tolist())
+
+            st.subheader("📉 Basic Statistics")
+            st.write(df.describe())
+
+        except Exception as e:
+            st.error(f"Error reading CSV: {e}")
