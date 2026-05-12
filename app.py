@@ -257,3 +257,48 @@ if uploaded_pdf is not None:
         full_text,
         height=400
     )
+import streamlit as st
+import pandas as pd
+import os
+
+st.title("🚀 Waste.Ai Upload Center")
+
+uploaded_file = st.file_uploader(
+    "Upload Any File",
+    type=["pdf", "csv", "xlsx", "txt", "png", "jpg", "jpeg", "geojson"]
+)
+
+if uploaded_file is not None:
+
+    save_path = os.path.join("uploads", uploaded_file.name)
+
+    os.makedirs("uploads", exist_ok=True)
+
+    with open(save_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    st.success(f"✅ File Uploaded: {uploaded_file.name}")
+
+    # CSV Preview
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+        st.subheader("📊 CSV Preview")
+        st.dataframe(df)
+
+    # TXT Preview
+    elif uploaded_file.name.endswith(".txt"):
+        text = uploaded_file.read().decode("utf-8")
+        st.subheader("📄 Text Preview")
+        st.text(text[:5000])
+
+    # PDF Info
+    elif uploaded_file.name.endswith(".pdf"):
+        st.subheader("📕 PDF Uploaded Successfully")
+        st.write("PDF saved in uploads folder.")
+
+    # Image Preview
+    elif uploaded_file.name.endswith((".png", ".jpg", ".jpeg")):
+        st.image(uploaded_file)
+
+    else:
+        st.info("File uploaded successfully.")
