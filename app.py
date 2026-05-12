@@ -330,26 +330,36 @@ if uploaded_file is not None:
 
         except Exception as e:
             st.error(f"Error reading CSV: {e}")
+import pandas as pd
+import streamlit as st
+
 if uploaded_file is not None:
 
     if uploaded_file.name.endswith(".csv"):
 
         try:
-            df = pd.read_csv(uploaded_file, low_memory=False)
 
-            st.subheader("📊 CSV Preview")
-            st.dataframe(df.head(100))
+            # FAST LOAD
+            df = pd.read_csv(
+                uploaded_file,
+                low_memory=False,
+                on_bad_lines='skip'
+            )
 
-            st.subheader("📈 Dataset Insights")
+            st.success("✅ CSV Loaded Successfully")
 
-            col1, col2, col3 = st.columns(3)
+            # SHOW BASIC INFO
+            st.write("Rows:", df.shape[0])
+            st.write("Columns:", df.shape[1])
 
-            col1.metric("Rows", len(df))
-            col2.metric("Columns", len(df.columns))
-            col3.metric("Missing Values", df.isnull().sum().sum())
-
-            st.subheader("🧠 Column Names")
+            # SHOW COLUMN NAMES
+            st.subheader("🧠 Columns")
             st.write(df.columns.tolist())
 
+            # SHOW ONLY FIRST 20 ROWS
+            st.subheader("📊 CSV Preview")
+            st.dataframe(df.head(20))
+
         except Exception as e:
-            st.error(f"Error reading CSV: {e}")
+
+            st.error(f"CSV Error: {e}")
