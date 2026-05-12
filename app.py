@@ -87,3 +87,49 @@ if df is not None:
         )
 
         fig
+uploaded_file = st.file_uploader(
+    "Upload CSV / TXT / XLSX",
+    type=["csv", "txt", "xlsx"]
+)
+
+df = None
+
+if uploaded_file is not None:
+
+    st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+    try:
+
+        # LARGE CSV SAFE MODE
+        if uploaded_file.name.endswith(".csv"):
+
+            df = pd.read_csv(
+                uploaded_file,
+                low_memory=False,
+                nrows=3000,
+                encoding="latin1"
+            )
+
+        # TXT
+        elif uploaded_file.name.endswith(".txt"):
+
+            df = pd.read_csv(
+                uploaded_file,
+                sep=None,
+                engine="python",
+                nrows=3000
+            )
+
+        # XLSX
+        elif uploaded_file.name.endswith(".xlsx"):
+
+            df = pd.read_excel(
+                uploaded_file,
+                nrows=3000
+            )
+
+        st.success("✅ Data Loaded Successfully")
+
+    except Exception as e:
+
+        st.error(f"❌ Upload Error: {e}")
