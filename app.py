@@ -4,6 +4,62 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="ZeroWaste.Ai", layout="wide")
+
+st.title("🚀 ZeroWaste.Ai")
+st.subheader("♻️ Multi-Satellite Intelligence Dashboard")
+
+uploaded_file = st.file_uploader(
+    "Upload CSV / TXT / XLSX",
+    type=["csv", "txt", "xlsx"],
+    key="main_uploader"
+)
+
+if uploaded_file is not None:
+
+    st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+    try:
+
+        # CSV
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file, low_memory=False)
+
+        # TXT
+        elif uploaded_file.name.endswith(".txt"):
+            df = pd.read_csv(uploaded_file, sep=None, engine="python")
+
+        # XLSX
+        elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file)
+
+        st.write("## 📊 Live Data Preview")
+        st.dataframe(df.head(100))
+
+        st.write("## 📈 Dataset Shape")
+        st.write(df.shape)
+
+        st.write("## 🧠 Columns")
+        st.write(df.columns.tolist())
+
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+
+st.markdown("---")
+
+st.markdown("""
+### 🧠 ZeroWaste.Ai Intelligence Core
+
+Future AI Features:
+- Methane hotspot prediction
+- Illegal landfill detection
+- ESG risk scoring
+- Satellite anomaly alerts
+- Government intelligence dashboard
+""")
 st.set_page_config(
     page_title="Waste.Ai",
     page_icon="🚀",
@@ -401,4 +457,60 @@ Future Systems:
 - Government intelligence dashboards
 - ESG compliance monitoring
 - Autonomous anomaly alerts
+""")
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="ZeroWaste.Ai", layout="wide")
+
+st.title("🚀 ZeroWaste.Ai")
+st.subheader("♻️ Multi-Satellite Intelligence Dashboard")
+
+uploaded_file = st.file_uploader(
+    "Upload CSV / TXT / XLSX",
+    type=["csv", "txt", "xlsx"],
+    key="main_uploader"
+)
+
+if uploaded_file is not None:
+
+    st.success(f"✅ Uploaded: {uploaded_file.name}")
+
+    try:
+
+        # CSV
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file, low_memory=False)
+
+        # TXT
+        elif uploaded_file.name.endswith(".txt"):
+            df = pd.read_csv(uploaded_file, sep=None, engine="python")
+
+        # XLSX
+        elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file)
+
+        st.write("## 📊 Live Data Preview")
+        st.dataframe(df.head(100))
+
+        st.write("## 📈 Dataset Shape")
+        st.write(df.shape)
+
+        st.write("## 🧠 Columns")
+        st.write(df.columns.tolist())
+
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+
+st.markdown("---")
+
+st.markdown("""
+### 🧠 ZeroWaste.Ai Intelligence Core
+
+Future AI Features:
+- Methane hotspot prediction
+- Illegal landfill detection
+- ESG risk scoring
+- Satellite anomaly alerts
+- Government intelligence dashboard
 """)
