@@ -69,11 +69,7 @@ AI + ESG + Methane Intelligence + Smart Waste Detection
 
 # ---------------- FILE UPLOAD ----------------
 
-uploaded_file = st.file_uploader(
-    "Upload CSV / TXT / XLSX",
-    type=["csv", "txt", "xlsx"],
-    key="main_uploader"
-)
+
 
 # ---------------- LOAD DATA ----------------
 
