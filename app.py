@@ -224,3 +224,36 @@ st.plotly_chart(
     fig,
     use_container_width=True
 )
+# =========================
+# PDF INTELLIGENCE ENGINE
+# =========================
+
+import pdfplumber
+
+st.subheader("📄 Upload Rare Intelligence PDF")
+
+uploaded_pdf = st.file_uploader(
+    "Upload PDF",
+    type=["pdf"]
+)
+
+if uploaded_pdf is not None:
+
+    full_text = ""
+
+    with pdfplumber.open(uploaded_pdf) as pdf:
+
+        for page in pdf.pages:
+
+            text = page.extract_text()
+
+            if text:
+                full_text += text + "\n"
+
+    st.subheader("🧠 Extracted Intelligence")
+
+    st.text_area(
+        "PDF Data",
+        full_text,
+        height=400
+    )
