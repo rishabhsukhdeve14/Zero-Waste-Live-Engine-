@@ -332,6 +332,7 @@ if uploaded_file is not None:
             st.error(f"Error reading CSV: {e}")
 import pandas as pd
 import streamlit as st
+import io
 
 if uploaded_file is not None:
 
@@ -339,26 +340,26 @@ if uploaded_file is not None:
 
         try:
 
-            # FAST LOAD
-            df = pd.read_csv(
-                uploaded_file,
-                low_memory=False,
-                on_bad_lines='skip'
-            )
+            # READ ONLY SMALL PART
+            content = uploaded_file.getvalue().decode("utf-8")
 
-            st.success("✅ CSV Loaded Successfully")
+            # TAKE FIRST 200 LINES ONLY
+            lines = content.splitlines()[:200]
 
-            # SHOW BASIC INFO
-            st.write("Rows:", df.shape[0])
-            st.write("Columns:", df.shape[1])
+            small_csv = "\n".join(lines)
 
-            # SHOW COLUMN NAMES
+            df = pd.read_csv(io.StringIO(small_csv))
+
+            st.success("✅ CSV Loaded")
+
+            st.subheader("📊 CSV Preview")
+            st.dataframe(df)
+
+            st.subheader("📈 Dataset Shape")
+            st.write(df.shape)
+
             st.subheader("🧠 Columns")
             st.write(df.columns.tolist())
-
-            # SHOW ONLY FIRST 20 ROWS
-            st.subheader("📊 CSV Preview")
-            st.dataframe(df.head(20))
 
         except Exception as e:
 
