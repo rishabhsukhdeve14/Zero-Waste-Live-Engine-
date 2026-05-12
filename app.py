@@ -60,6 +60,79 @@ df = df.dropna()
 st.subheader("📡 Live Landfill Sites")
 
 st.dataframe(df)
+# =========================
+# AI RISK ENGINE
+# =========================
+
+def get_risk(methane):
+
+    if methane < 1900:
+        return "🟢 LOW"
+
+    elif methane < 2050:
+        return "🟡 MEDIUM"
+
+    elif methane < 2150:
+        return "🟠 HIGH"
+
+    else:
+        return "🔴 CRITICAL"
+
+
+# Add Risk Column
+df["Risk_Level"] = df["Methane"].apply(get_risk)
+
+# =========================
+# AI RISK TABLE
+# =========================
+
+st.subheader("🚨 AI Risk Detection")
+
+st.dataframe(
+    df[
+        [
+            "City",
+            "Methane",
+            "Risk_Level"
+        ]
+    ].sort_values(
+        by="Methane",
+        ascending=False
+    )
+)
+
+# =========================
+# RISK SUMMARY
+# =========================
+
+critical_count = len(df[df["Risk_Level"] == "🔴 CRITICAL"])
+high_count = len(df[df["Risk_Level"] == "🟠 HIGH"])
+medium_count = len(df[df["Risk_Level"] == "🟡 MEDIUM"])
+low_count = len(df[df["Risk_Level"] == "🟢 LOW"])
+
+st.subheader("📊 AI Risk Summary")
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("🔴 Critical", critical_count)
+col2.metric("🟠 High", high_count)
+col3.metric("🟡 Medium", medium_count)
+col4.metric("🟢 Low", low_count)
+
+# =========================
+# TOP CRITICAL ALERTS
+# =========================
+
+critical_sites = df[df["Risk_Level"] == "🔴 CRITICAL"]
+
+st.subheader("🚨 Critical Methane Alerts")
+
+st.dataframe(
+    critical_sites.sort_values(
+        by="Methane",
+        ascending=False
+    )
+)
 
 # STATS
 st.subheader("📊 Monitoring Stats")
