@@ -133,7 +133,7 @@ st.warning("⚠️ HIGH METHANE ACTIVITY DETECTED")
 st.markdown("---")
 
 # =========================================================
-# LIVE METHANE
+# LIVE SATELLITE DATA
 # =========================================================
 
 try:
@@ -216,7 +216,7 @@ with c4:
 st.markdown("---")
 
 # =========================================================
-# LIVE MAP
+# LIVE SATELLITE MAP
 # =========================================================
 
 st.header("🌍 LIVE SATELLITE HEATMAP")
@@ -268,15 +268,13 @@ st.markdown("---")
 
 st.header("📂 Upload Intelligence CSV")
 
-st.write("Upload Large Intelligence CSV File")
-
 uploaded_file = st.file_uploader(
     "Upload CSV",
     type=["csv"]
 )
 
 # =========================================================
-# CSV PROCESSING
+# PROCESS CSV
 # =========================================================
 
 if uploaded_file is not None:
@@ -284,7 +282,7 @@ if uploaded_file is not None:
     try:
 
         # =================================================
-        # LOAD LIMITED ROWS
+        # LOAD CSV
         # =================================================
 
         df = pd.read_csv(
@@ -292,10 +290,6 @@ if uploaded_file is not None:
             low_memory=False,
             nrows=5000
         )
-
-        # =================================================
-        # SUCCESS
-        # =================================================
 
         st.success(
             "✅ Intelligence CSV Loaded Successfully"
@@ -458,6 +452,269 @@ if uploaded_file is not None:
 
             st.warning(
                 "⚠️ Latitude / Longitude Columns Not Found"
+            )
+
+        # =================================================
+        # AI DATA VERIFICATION ENGINE
+        # =================================================
+
+        st.markdown("---")
+
+        st.header("🧠 AI DATA VERIFICATION ENGINE")
+
+        if st.button("VERIFY DATASET"):
+
+            verified_rows = 0
+            suspicious_rows = 0
+            invalid_coordinates = 0
+            duplicate_sites = 0
+            missing_data = 0
+
+            verification_results = []
+
+            methane_col = None
+
+            # =============================================
+            # DETECT METHANE COLUMN
+            # =============================================
+
+            for col in df.columns:
+
+                col_lower = col.lower()
+
+                if (
+                    "methane" in col_lower
+                    or
+                    "ch4" in col_lower
+                ):
+
+                    methane_col = col
+
+            # =============================================
+            # DUPLICATES
+            # =============================================
+
+            if (
+                len(lat_cols) > 0
+                and
+                len(lon_cols) > 0
+            ):
+
+                duplicates = df.duplicated(
+                    subset=[
+                        lat_col,
+                        lon_col
+                    ]
+                )
+
+                duplicate_sites = duplicates.sum()
+
+            # =============================================
+            # VERIFY ROWS
+            # =============================================
+
+            for i, row in df.iterrows():
+
+                status = "VERIFIED"
+
+                issues = []
+
+                # =========================================
+                # MISSING DATA
+                # =========================================
+
+                if row.isnull().sum() > 0:
+
+                    missing_data += 1
+
+                    issues.append(
+                        "Missing Fields"
+                    )
+
+                # =========================================
+                # COORDINATES
+                # =========================================
+
+                try:
+
+                    if (
+                        len(lat_cols) > 0
+                        and
+                        len(lon_cols) > 0
+                    ):
+
+                        lat = float(row[lat_col])
+                        lon = float(row[lon_col])
+
+                        if (
+                            lat > 90
+                            or
+                            lat < -90
+                            or
+                            lon > 180
+                            or
+                            lon < -180
+                        ):
+
+                            invalid_coordinates += 1
+
+                            status = "INVALID"
+
+                            issues.append(
+                                "Invalid Coordinates"
+                            )
+
+                except:
+
+                    invalid_coordinates += 1
+
+                    status = "INVALID"
+
+                    issues.append(
+                        "Coordinate Parsing Failed"
+                    )
+
+                # =========================================
+                # METHANE CHECK
+                # =========================================
+
+                try:
+
+                    if methane_col:
+
+                        methane = float(
+                            row[methane_col]
+                        )
+
+                        if methane < 1000:
+
+                            suspicious_rows += 1
+
+                            status = "SUSPICIOUS"
+
+                            issues.append(
+                                "Methane Too Low"
+                            )
+
+                        if methane > 10000:
+
+                            suspicious_rows += 1
+
+                            status = "SUSPICIOUS"
+
+                            issues.append(
+                                "Methane Too High"
+                            )
+
+                except:
+
+                    issues.append(
+                        "Methane Parse Error"
+                    )
+
+                # =========================================
+                # VERIFIED
+                # =========================================
+
+                if status == "VERIFIED":
+
+                    verified_rows += 1
+
+                verification_results.append({
+
+                    "row": i,
+
+                    "status": status,
+
+                    "issues": ", ".join(issues)
+
+                })
+
+            # =============================================
+            # RESULTS
+            # =============================================
+
+            st.success(
+                "✅ DATASET VERIFICATION COMPLETE"
+            )
+
+            vc1, vc2, vc3, vc4 = st.columns(4)
+
+            with vc1:
+                st.metric(
+                    "Verified Rows",
+                    verified_rows
+                )
+
+            with vc2:
+                st.metric(
+                    "Suspicious Rows",
+                    suspicious_rows
+                )
+
+            with vc3:
+                st.metric(
+                    "Invalid Coordinates",
+                    invalid_coordinates
+                )
+
+            with vc4:
+                st.metric(
+                    "Duplicate Sites",
+                    duplicate_sites
+                )
+
+            st.markdown("---")
+
+            st.metric(
+                "Rows With Missing Data",
+                missing_data
+            )
+
+            st.markdown("---")
+
+            results_df = pd.DataFrame(
+                verification_results
+            )
+
+            st.subheader(
+                "📡 Verification Results"
+            )
+
+            st.dataframe(
+                results_df.head(500),
+                use_container_width=True
+            )
+
+            if suspicious_rows > 0:
+
+                st.warning(
+                    f"""
+                    ⚠️ {suspicious_rows}
+                    suspicious records detected
+                    """
+                )
+
+            if invalid_coordinates > 0:
+
+                st.error(
+                    f"""
+                    🚨 {invalid_coordinates}
+                    invalid coordinate rows detected
+                    """
+                )
+
+            if duplicate_sites > 0:
+
+                st.info(
+                    f"""
+                    ℹ️ {duplicate_sites}
+                    duplicate landfill sites found
+                    """
+                )
+
+            st.success(
+                "✅ AI Verification Engine Finished"
             )
 
     except Exception as e:
