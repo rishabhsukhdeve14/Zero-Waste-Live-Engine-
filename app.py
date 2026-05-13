@@ -319,8 +319,7 @@ if uploaded_file is not None:
                 with open(zip_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
 
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    zip_ref.extractall(tmpdir)
+                with zipfile.ZipFile(zip_path, 'r', allowZip64=True) as zip_ref: zip_ref.extractall(tmpdir)
 
                 data_files = []
 
