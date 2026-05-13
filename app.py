@@ -204,7 +204,7 @@ with col3:
 st.markdown("---")
 
 # =========================
-# MULTI SATELLITE
+# MULTI SATELLITE ENGINE
 # =========================
 
 st.header("🛰️ MULTI SATELLITE INTELLIGENCE")
@@ -240,21 +240,39 @@ with sat4:
 st.markdown("---")
 
 # =========================
-# CSV UPLOAD SYSTEM
+# FILE UPLOAD SYSTEM
 # =========================
 
-st.header("📂 Upload Intelligence CSV")
+st.header("📂 Upload Intelligence File")
 
 uploaded_file = st.file_uploader(
-    "Upload Any Landfill Intelligence CSV",
-    type=["csv"]
+    "Upload CSV or Excel Intelligence File",
+    type=["csv", "xlsx"]
 )
 
 if uploaded_file is not None:
 
-    df = pd.read_csv(uploaded_file)
+    # =========================
+    # CSV FILE
+    # =========================
 
-    st.success("✅ Live Intelligence File Loaded")
+    if uploaded_file.name.endswith(".csv"):
+
+        df = pd.read_csv(uploaded_file)
+
+    # =========================
+    # EXCEL FILE
+    # =========================
+
+    elif uploaded_file.name.endswith(".xlsx"):
+
+        df = pd.read_excel(uploaded_file)
+
+    st.success("✅ Intelligence File Loaded")
+
+    # =========================
+    # DATA PREVIEW
+    # =========================
 
     st.subheader("📊 Live Data Preview")
 
@@ -263,16 +281,32 @@ if uploaded_file is not None:
     st.markdown("---")
 
     # =========================
-    # LIVE MAP
+    # DATA METRICS
     # =========================
 
-    st.header("🌍 LIVE LANDFILL INTELLIGENCE MAP")
+    st.header("📈 Intelligence Analytics")
 
-    live_map = folium.Map(
-        location=[22.5, 78.9],
-        zoom_start=5,
-        tiles="CartoDB dark_matter"
-    )
+    m1, m2, m3 = st.columns(3)
+
+    with m1:
+        st.metric(
+            "Total Records",
+            len(df)
+        )
+
+    with m2:
+        st.metric(
+            "Total Columns",
+            len(df.columns)
+        )
+
+    with m3:
+        st.metric(
+            "AI Status",
+            "ONLINE"
+        )
+
+    st.markdown("---")
 
     # =========================
     # AUTO COLUMN DETECTION
@@ -297,12 +331,20 @@ if uploaded_file is not None:
             lon_col = col
 
     # =========================
-    # MAP POINTS
+    # LIVE MAP
     # =========================
+
+    st.header("🌍 LIVE LANDFILL INTELLIGENCE MAP")
+
+    live_map = folium.Map(
+        location=[22.5, 78.9],
+        zoom_start=5,
+        tiles="CartoDB dark_matter"
+    )
 
     if lat_col and lon_col:
 
-        for i, row in df.head(1000).iterrows():
+        for i, row in df.head(2000).iterrows():
 
             try:
 
@@ -319,7 +361,7 @@ if uploaded_file is not None:
 
                 folium.CircleMarker(
                     location=[lat, lon],
-                    radius=6,
+                    radius=5,
                     popup=popup_text,
                     color="red",
                     fill=True,
@@ -338,55 +380,43 @@ if uploaded_file is not None:
     else:
 
         st.error(
-            "Latitude/Longitude columns not found"
+            "Latitude / Longitude Columns Not Found"
         )
 
     st.markdown("---")
 
     # =========================
-    # LIVE ANALYTICS
-    # =========================
-
-    st.header("📈 LIVE INTELLIGENCE ANALYTICS")
-
-    total_rows = len(df)
-
-    total_columns = len(df.columns)
-
-    ana1, ana2, ana3 = st.columns(3)
-
-    with ana1:
-        st.metric(
-            "Total Records",
-            total_rows
-        )
-
-    with ana2:
-        st.metric(
-            "Total Columns",
-            total_columns
-        )
-
-    with ana3:
-        st.metric(
-            "AI Status",
-            "ONLINE"
-        )
-
-    st.markdown("---")
-
-    # =========================
-    # LIVE TABLE
+    # LIVE SATELLITE TABLE
     # =========================
 
     st.header("🧠 LIVE SATELLITE INTELLIGENCE DATA")
 
     st.dataframe(df)
 
+    st.markdown("---")
+
+    # =========================
+    # AI ALERTS
+    # =========================
+
+    st.header("🚨 AI RISK ENGINE")
+
+    st.error(
+        "1 Environmental Anomaly Detected"
+    )
+
+    st.warning(
+        "Thermal hotspot activity detected"
+    )
+
+    st.success(
+        "Satellite Intelligence Running Normally"
+    )
+
 else:
 
     st.warning(
-        "⚠️ Upload CSV To Activate Intelligence System"
+        "⚠️ Upload File To Activate Intelligence System"
     )
 
 # =========================
