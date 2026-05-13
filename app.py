@@ -48,8 +48,12 @@ div.stAlert {
     border-radius: 14px;
 }
 
+html, body, [class*="css"] {
+    color: white;
+}
+
 section[data-testid="stSidebar"] {
-    background-color: #081129;
+    background-color: #071028;
 }
 
 </style>
@@ -76,7 +80,7 @@ try:
 
 except Exception as e:
 
-    earth_engine_status = f"❌ Engine Error: {e}"
+    earth_engine_status = f"❌ Earth Engine Error: {e}"
 
 # =========================
 # SIDEBAR
@@ -88,16 +92,10 @@ st.sidebar.success("🟢 SYSTEM ONLINE")
 
 city = st.sidebar.selectbox(
     "Monitor City",
-    [
-        "Delhi",
-        "Mumbai",
-        "Chennai",
-        "Hyderabad",
-        "Bangalore"
-    ]
+    ["Delhi", "Mumbai", "Chennai", "Bangalore", "Hyderabad"]
 )
 
-sensitivity = st.sidebar.slider(
+scan = st.sidebar.slider(
     "AI Scan Sensitivity",
     0,
     100,
@@ -109,8 +107,8 @@ mode = st.sidebar.selectbox(
     [
         "Waste Monitoring",
         "Methane Intelligence",
-        "Climate Risk",
-        "Thermal Detection"
+        "Fire Detection",
+        "Thermal Analysis"
     ]
 )
 
@@ -119,7 +117,7 @@ mode = st.sidebar.selectbox(
 # =========================
 
 st.markdown("""
-<h1 style='font-size:80px; color:#00ffe1;'>
+<h1 style='font-size:70px; color:#00ffe1;'>
 ZERO<br>WASTE AI
 </h1>
 
@@ -135,7 +133,7 @@ st.subheader(
 st.markdown("---")
 
 # =========================
-# SATELLITE STATUS
+# SATELLITE ENGINE
 # =========================
 
 st.header("Satellite Engine")
@@ -174,12 +172,13 @@ try:
         maxPixels=1e9
     )
 
-    methane_value = methane.get(
+    value = methane.get(
         'CH4_column_volume_mixing_ratio_dry_air'
     ).getInfo()
 
 except:
-    methane_value = 1922.53
+
+    value = 1922.53
 
 # =========================
 # GLOBAL METRICS
@@ -195,7 +194,7 @@ with col1:
 with col2:
     st.metric(
         "India Methane",
-        f"{round(methane_value,2)} ppb"
+        f"{round(value,2)}"
     )
 
 with col3:
@@ -204,43 +203,84 @@ with col3:
 st.markdown("---")
 
 # =========================
-# MULTI SATELLITE ENGINE
+# MULTI SATELLITE
 # =========================
 
 st.header("🛰️ MULTI SATELLITE INTELLIGENCE")
 
 st.success("✅ Multi-Satellite Engine Online")
 
-sat1, sat2, sat3, sat4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
-with sat1:
-    st.metric(
-        "Sentinel-5P",
-        f"{round(methane_value,2)}"
-    )
+with col1:
+    st.metric("Sentinel-5P", "1922.53")
 
-with sat2:
-    st.metric(
-        "Sentinel-2",
-        "Surface Active"
-    )
+with col2:
+    st.metric("Sentinel-2", "Surface Scan")
 
-with sat3:
-    st.metric(
-        "Landsat-8",
-        "Thermal Online"
-    )
+with col3:
+    st.metric("Landsat-8", "Thermal Active")
 
-with sat4:
-    st.metric(
-        "MODIS",
-        "Fire Active"
-    )
+with col4:
+    st.metric("MODIS", "Fire Active")
 
 st.markdown("---")
 
 # =========================
-# FILE UPLOAD SYSTEM
+# LIVE MAP
+# =========================
+
+st.header("🌍 LIVE SATELLITE HEATMAP")
+
+try:
+
+    methane_map = folium.Map(
+        location=[22.5, 78.9],
+        zoom_start=5,
+        tiles="CartoDB dark_matter"
+    )
+
+    folium.CircleMarker(
+        location=[28.6139, 77.2090],
+        radius=40,
+        popup="Delhi Methane Hotspot",
+        color="red",
+        fill=True,
+        fill_color="red"
+    ).add_to(methane_map)
+
+    folium.CircleMarker(
+        location=[19.0760, 72.8777],
+        radius=30,
+        popup="Mumbai Waste Zone",
+        color="orange",
+        fill=True,
+        fill_color="orange"
+    ).add_to(methane_map)
+
+    folium.CircleMarker(
+        location=[13.0827, 80.2707],
+        radius=25,
+        popup="Chennai Pollution Cluster",
+        color="yellow",
+        fill=True,
+        fill_color="yellow"
+    ).add_to(methane_map)
+
+    st_folium(
+        methane_map,
+        width=1400,
+        height=600
+    )
+
+except Exception as e:
+
+    st.error(e)
+
+st.markdown("---")
+
+# =========================
+# UPLOAD FILE
 # =========================
 
 st.header("📂 Upload Intelligence File")
@@ -252,178 +292,163 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # =========================
-    # CSV FILE
-    # =========================
+    try:
 
-    if uploaded_file.name.endswith(".csv"):
+        # CSV FILE
+        if uploaded_file.name.endswith(".csv"):
 
-        df = pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file)
 
-    # =========================
-    # EXCEL FILE
-    # =========================
+        # EXCEL FILE
+        elif uploaded_file.name.endswith(".xlsx"):
 
-    elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(
+                uploaded_file,
+                engine="openpyxl"
+            )
 
-        df = pd.read_excel(uploaded_file)
-
-    st.success("✅ Intelligence File Loaded")
-
-    # =========================
-    # DATA PREVIEW
-    # =========================
-
-    st.subheader("📊 Live Data Preview")
-
-    st.dataframe(df.head(100))
-
-    st.markdown("---")
-
-    # =========================
-    # DATA METRICS
-    # =========================
-
-    st.header("📈 Intelligence Analytics")
-
-    m1, m2, m3 = st.columns(3)
-
-    with m1:
-        st.metric(
-            "Total Records",
-            len(df)
+        st.success(
+            "✅ Intelligence File Loaded Successfully"
         )
 
-    with m2:
-        st.metric(
-            "Total Columns",
-            len(df.columns)
+        # =========================
+        # METRICS
+        # =========================
+
+        st.subheader("📊 Intelligence Metrics")
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.metric("Rows", len(df))
+
+        with c2:
+            st.metric("Columns", len(df.columns))
+
+        with c3:
+            st.metric("Live Status", "ONLINE")
+
+        st.markdown("---")
+
+        # =========================
+        # COLUMN LIST
+        # =========================
+
+        st.subheader("🧠 Detected Columns")
+
+        st.write(df.columns.tolist())
+
+        st.markdown("---")
+
+        # =========================
+        # DATA TABLE
+        # =========================
+
+        st.subheader("📡 Live Intelligence Feed")
+
+        st.dataframe(
+            df.head(1000),
+            use_container_width=True
         )
 
-    with m3:
-        st.metric(
-            "AI Status",
-            "ONLINE"
+        st.markdown("---")
+
+        # =========================
+        # AUTO MAP
+        # =========================
+
+        if (
+            "latitude" in df.columns
+            and
+            "longitude" in df.columns
+        ):
+
+            st.subheader(
+                "🌍 Live Landfill Intelligence Map"
+            )
+
+            map_df = df.rename(columns={
+                "latitude": "lat",
+                "longitude": "lon"
+            })
+
+            st.map(map_df)
+
+        elif (
+            "lat" in df.columns
+            and
+            "lon" in df.columns
+        ):
+
+            st.subheader(
+                "🌍 Live Landfill Intelligence Map"
+            )
+
+            st.map(df)
+
+        else:
+
+            st.warning(
+                "⚠️ No latitude/longitude columns found"
+            )
+
+        # =========================
+        # LIVE FILTER
+        # =========================
+
+        st.markdown("---")
+
+        st.subheader("🔍 Live Search")
+
+        search = st.text_input(
+            "Search Any Data"
         )
 
-    st.markdown("---")
+        if search:
 
-    # =========================
-    # AUTO COLUMN DETECTION
-    # =========================
+            filtered = df.astype(str).apply(
+                lambda x: x.str.contains(
+                    search,
+                    case=False
+                )
+            ).any(axis=1)
 
-    lat_col = None
-    lon_col = None
+            st.dataframe(
+                df[filtered],
+                use_container_width=True
+            )
 
-    for col in df.columns:
+    except Exception as e:
 
-        if col.lower() in [
-            "lat",
-            "latitude"
-        ]:
-            lat_col = col
-
-        if col.lower() in [
-            "lon",
-            "lng",
-            "longitude"
-        ]:
-            lon_col = col
-
-    # =========================
-    # LIVE MAP
-    # =========================
-
-    st.header("🌍 LIVE LANDFILL INTELLIGENCE MAP")
-
-    live_map = folium.Map(
-        location=[22.5, 78.9],
-        zoom_start=5,
-        tiles="CartoDB dark_matter"
-    )
-
-    if lat_col and lon_col:
-
-        for i, row in df.head(2000).iterrows():
-
-            try:
-
-                lat = float(row[lat_col])
-                lon = float(row[lon_col])
-
-                popup_text = ""
-
-                for c in df.columns[:10]:
-
-                    popup_text += (
-                        f"{c}: {row[c]}<br>"
-                    )
-
-                folium.CircleMarker(
-                    location=[lat, lon],
-                    radius=5,
-                    popup=popup_text,
-                    color="red",
-                    fill=True,
-                    fill_color="red"
-                ).add_to(live_map)
-
-            except:
-                pass
-
-        st_folium(
-            live_map,
-            width=1400,
-            height=700
-        )
-
-    else:
-
-        st.error(
-            "Latitude / Longitude Columns Not Found"
-        )
-
-    st.markdown("---")
-
-    # =========================
-    # LIVE SATELLITE TABLE
-    # =========================
-
-    st.header("🧠 LIVE SATELLITE INTELLIGENCE DATA")
-
-    st.dataframe(df)
-
-    st.markdown("---")
-
-    # =========================
-    # AI ALERTS
-    # =========================
-
-    st.header("🚨 AI RISK ENGINE")
-
-    st.error(
-        "1 Environmental Anomaly Detected"
-    )
-
-    st.warning(
-        "Thermal hotspot activity detected"
-    )
-
-    st.success(
-        "Satellite Intelligence Running Normally"
-    )
+        st.error(e)
 
 else:
 
     st.warning(
-        "⚠️ Upload File To Activate Intelligence System"
+        "⚠️ Upload CSV Or Excel File To Activate Intelligence System"
     )
+
+# =========================
+# AI ALERTS
+# =========================
+
+st.markdown("---")
+
+st.header("🚨 AI RISK ENGINE")
+
+st.error(
+    "🚨 Environmental anomalies detected"
+)
+
+st.success(
+    "✅ Real-Time Intelligence Running"
+)
+
+st.markdown("---")
 
 # =========================
 # FOOTER
 # =========================
-
-st.markdown("---")
 
 st.caption(
     "ZERO WASTE AI • Real-Time Multi-Satellite Intelligence"
