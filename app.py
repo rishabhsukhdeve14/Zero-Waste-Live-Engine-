@@ -199,18 +199,18 @@ st.header("🛰️ MULTI SATELLITE INTELLIGENCE")
 
 st.success("✅ Multi-Satellite Engine Online")
 
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-with col1:
+with c1:
     st.metric("Sentinel-5P", "1922.53")
 
-with col2:
+with c2:
     st.metric("Sentinel-2", "Surface Scan")
 
-with col3:
+with c3:
     st.metric("Landsat-8", "Thermal Active")
 
-with col4:
+with c4:
     st.metric("MODIS", "Fire Alert")
 
 st.markdown("---")
@@ -263,7 +263,7 @@ st_folium(
 st.markdown("---")
 
 # =========================================================
-# CSV FILE UPLOAD
+# CSV UPLOAD
 # =========================================================
 
 st.header("📂 Upload Intelligence CSV")
@@ -276,49 +276,54 @@ uploaded_file = st.file_uploader(
 )
 
 # =========================================================
-# PROCESS CSV
+# CSV PROCESSING
 # =========================================================
 
 if uploaded_file is not None:
 
     try:
 
-        # =========================
-        # LOAD CSV
-        # =========================
+        # =================================================
+        # LOAD LIMITED ROWS
+        # =================================================
 
         df = pd.read_csv(
             uploaded_file,
-            low_memory=False
+            low_memory=False,
+            nrows=5000
         )
 
-        # =========================
+        # =================================================
         # SUCCESS
-        # =========================
+        # =================================================
 
-        st.success("✅ Intelligence CSV Loaded Successfully")
+        st.success(
+            "✅ Intelligence CSV Loaded Successfully"
+        )
 
-        # =========================
-        # METRICS
-        # =========================
+        st.markdown("---")
+
+        # =================================================
+        # DATASET METRICS
+        # =================================================
 
         st.subheader("📊 Dataset Metrics")
 
-        c1, c2, c3 = st.columns(3)
+        mc1, mc2, mc3 = st.columns(3)
 
-        with c1:
+        with mc1:
             st.metric(
-                "Total Rows",
+                "Loaded Rows",
                 len(df)
             )
 
-        with c2:
+        with mc2:
             st.metric(
                 "Columns",
                 len(df.columns)
             )
 
-        with c3:
+        with mc3:
             st.metric(
                 "Live Status",
                 "ACTIVE"
@@ -326,9 +331,9 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
-        # =========================
+        # =================================================
         # COLUMN NAMES
-        # =========================
+        # =================================================
 
         st.subheader("🧠 Intelligence Columns")
 
@@ -336,23 +341,9 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
-        # =========================
-        # DATA TABLE
-        # =========================
-
-        st.subheader("📄 Live Intelligence Table")
-
-        st.dataframe(
-            df,
-            use_container_width=True,
-            height=500
-        )
-
-        st.markdown("---")
-
-        # =========================
+        # =================================================
         # SEARCH SYSTEM
-        # =========================
+        # =================================================
 
         st.subheader("🔍 Search Intelligence")
 
@@ -369,16 +360,33 @@ if uploaded_file is not None:
                 )
             ).any(axis=1)
 
+            filtered_df = df[filtered]
+
             st.dataframe(
-                df[filtered],
-                use_container_width=True
+                filtered_df.head(200),
+                use_container_width=True,
+                height=400
             )
 
         st.markdown("---")
 
-        # =========================
-        # DETECT LAT LON
-        # =========================
+        # =================================================
+        # DATA TABLE
+        # =================================================
+
+        st.subheader("📄 Live Intelligence Table")
+
+        st.dataframe(
+            df.head(200),
+            use_container_width=True,
+            height=500
+        )
+
+        st.markdown("---")
+
+        # =================================================
+        # DETECT LATITUDE LONGITUDE
+        # =================================================
 
         lat_cols = [
             c for c in df.columns
@@ -391,9 +399,9 @@ if uploaded_file is not None:
             or "lng" in c.lower()
         ]
 
-        # =========================
-        # MAP
-        # =========================
+        # =================================================
+        # MAP SYSTEM
+        # =================================================
 
         if len(lat_cols) > 0 and len(lon_cols) > 0:
 
@@ -410,7 +418,7 @@ if uploaded_file is not None:
                 tiles="CartoDB dark_matter"
             )
 
-            sample_df = df.head(1000)
+            sample_df = df.head(200)
 
             for i, row in sample_df.iterrows():
 
@@ -449,7 +457,7 @@ if uploaded_file is not None:
         else:
 
             st.warning(
-                "Latitude / Longitude Columns Not Found"
+                "⚠️ Latitude / Longitude Columns Not Found"
             )
 
     except Exception as e:
