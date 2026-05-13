@@ -1,28 +1,13 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
 import ee
 import os
 import json
 import folium
-import random
-import pandas as pd
+from streamlit_folium import st_folium
+from streamlit_autorefresh import st_autorefresh
 import plotly.express as px
-from streamlit_folium import st_folium
-from streamlit_autorefresh import st_autorefresh
-import numpy as np
-import requests
-
-from streamlit_folium import st_folium
-from streamlit_autorefresh import st_autorefresh
-from sklearn.ensemble import IsolationForest
-
-# =========================
-# AUTO REFRESH
-# =========================
-
-st_autorefresh(
-    interval=10000,
-    key="live_refresh"
-)
 
 # =========================
 # PAGE CONFIG
@@ -34,34 +19,12 @@ st.set_page_config(
 )
 
 # =========================
-# SIDEBAR CONTROL PANEL
+# AUTO REFRESH
 # =========================
 
-st.sidebar.title("ZERO WASTE AI")
-
-st.sidebar.success("🟢 SYSTEM ONLINE")
-
-city_monitor = st.sidebar.selectbox(
-    "Monitor City",
-    ["Delhi", "Mumbai", "Chennai", "Bangalore", "Hyderabad"]
-)
-
-scan_speed = st.sidebar.slider(
-    "AI Scan Sensitivity",
-    1,
-    100,
-    88
-)
-
-mode = st.sidebar.selectbox(
-    "Detection Mode",
-    [
-        "Methane Detection",
-        "Heat Signature",
-        "Waste Monitoring",
-        "Air Toxicity",
-        "Industrial Leak"
-    ]
+st_autorefresh(
+    interval=10000,
+    key="live_refresh"
 )
 
 # =========================
@@ -83,7 +46,7 @@ h1, h2, h3 {
 
 [data-testid="stMetricValue"] {
     color: #00ff99;
-    font-size: 42px;
+    font-size: 40px;
     font-weight: bold;
 }
 
@@ -101,11 +64,15 @@ html, body, [class*="css"] {
     color: white;
 }
 
+section[data-testid="stSidebar"] {
+    background-color: #111827;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# GOOGLE EARTH ENGINE LOGIN
+# EARTH ENGINE LOGIN
 # =========================
 
 try:
@@ -121,11 +88,47 @@ try:
 
     ee.Initialize(credentials)
 
-    earth_engine_status = "✅ Satellite Engine Connected"
+    earth_engine_status = "✅ Multi-Satellite Engine Connected"
 
 except Exception as e:
 
-    earth_engine_status = f"❌ Satellite Engine Not Connected: {e}"
+    earth_engine_status = f"❌ Satellite Error: {e}"
+
+# =========================
+# SIDEBAR
+# =========================
+
+st.sidebar.title("ZERO WASTE AI")
+
+st.sidebar.success("🟢 SYSTEM ONLINE")
+
+city = st.sidebar.selectbox(
+    "Monitor City",
+    [
+        "Delhi",
+        "Mumbai",
+        "Chennai",
+        "Hyderabad",
+        "Bangalore"
+    ]
+)
+
+sensitivity = st.sidebar.slider(
+    "AI Scan Sensitivity",
+    1,
+    100,
+    90
+)
+
+mode = st.sidebar.selectbox(
+    "Detection Mode",
+    [
+        "Waste Monitoring",
+        "Methane Intelligence",
+        "Thermal Scan",
+        "Fire Detection"
+    ]
+)
 
 # =========================
 # HEADER
@@ -141,12 +144,14 @@ Real-Time Multi-Satellite Environmental Intelligence System
 </h3>
 """, unsafe_allow_html=True)
 
-st.subheader("AI + ESG + Methane + Landfill + Climate Intelligence")
+st.subheader(
+    "AI + ESG + Methane + Landfill + Climate Intelligence"
+)
 
 st.markdown("---")
 
 # =========================
-# SATELLITE STATUS
+# ENGINE STATUS
 # =========================
 
 st.header("Satellite Engine")
@@ -158,37 +163,19 @@ st.warning("⚠️ HIGH METHANE ACTIVITY DETECTED")
 st.markdown("---")
 
 # =========================
-# EARTH ENGINE DATA
+# LOAD CSV
 # =========================
 
-try:
+@st.cache_data(ttl=10)
+def load_data():
 
-    collection = ee.ImageCollection(
-        'COPERNICUS/S5P/OFFL/L3_CH4'
-    ).select(
-        'CH4_column_volume_mixing_ratio_dry_air'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
+    df = pd.read_csv(
+        "ZeroWaste_V15_Satellite_Intelligence.csv"
     )
 
-    image = collection.mean()
+    return df
 
-    india_region = ee.Geometry.Rectangle([68, 6, 97, 37])
-
-    methane = image.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=india_region,
-        scale=7000,
-        maxPixels=1e9
-    )
-
-    value = methane.get(
-        'CH4_column_volume_mixing_ratio_dry_air'
-    ).getInfo()
-
-except:
-    value = 1922.53
+df = load_data()
 
 # =========================
 # GLOBAL METRICS
@@ -199,444 +186,202 @@ st.header("Global Intelligence Metrics")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Cities Scanned", "24")
+    st.metric(
+        "Total Sites",
+        len(df)
+    )
 
 with col2:
-    st.metric("India Methane", f"{round(value,2)} ppb")
+    st.metric(
+        "Average Methane",
+        f"{round(df['Methane_PPB'].mean(),2)} ppb"
+    )
 
 with col3:
-    st.metric("AI Accuracy", "96%")
+    st.metric(
+        "AI Accuracy",
+        "96%"
+    )
 
 st.markdown("---")
 
-# =========================
-# LIVE ANALYSIS
-# =========================
-
-st.header("Live Satellite Analysis")
 # =========================
 # MULTI SATELLITE ENGINE
 # =========================
 
 st.header("🛰️ MULTI SATELLITE INTELLIGENCE")
 
-try:
+st.success(
+    "✅ Sentinel-1 + Sentinel-2 + Sentinel-5P + Landsat-8/9 + MODIS Active"
+)
 
-    # =========================
-    # SENTINEL 5P METHANE
-    # =========================
+sat1, sat2, sat3, sat4, sat5 = st.columns(5)
 
-    s5p = ee.ImageCollection(
-        'COPERNICUS/S5P/OFFL/L3_CH4'
-    ).select(
-        'CH4_column_volume_mixing_ratio_dry_air'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
-    ).mean()
-
-    # =========================
-    # SENTINEL 2 SURFACE
-    # =========================
-
-    s2 = ee.ImageCollection(
-        'COPERNICUS/S2_SR'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
-    ).median()
-
-    # =========================
-    # LANDSAT 8
-    # =========================
-
-    landsat8 = ee.ImageCollection(
-        'LANDSAT/LC08/C02/T1_L2'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
-    ).median()
-
-    # =========================
-    # LANDSAT 9
-    # =========================
-
-    landsat9 = ee.ImageCollection(
-        'LANDSAT/LC09/C02/T1_L2'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
-    ).median()
-
-    # =========================
-    # MODIS THERMAL
-    # =========================
-
-    modis = ee.ImageCollection(
-        'MODIS/061/MOD11A1'
-    ).filterDate(
-        '2024-01-01',
-        '2024-12-31'
-    ).mean()
-
-    st.success("✅ Multi-Satellite Engine Online")
-
-    # =========================
-    # INDIA REGION
-    # =========================
-
-    india = ee.Geometry.Rectangle(
-        [68, 6, 97, 37]
+with sat1:
+    st.metric(
+        "Sentinel-5P",
+        "Methane"
     )
 
-    # =========================
-    # METHANE VALUE
-    # =========================
-
-    methane_data = s5p.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=india,
-        scale=7000,
-        maxPixels=1e9
+with sat2:
+    st.metric(
+        "Sentinel-2",
+        "Surface"
     )
 
-    methane_value = methane_data.get(
-        'CH4_column_volume_mixing_ratio_dry_air'
-    ).getInfo()
-
-    # =========================
-    # SATELLITE METRICS
-    # =========================
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        st.metric(
-            "Sentinel-5P",
-            f"{round(methane_value,2)} ppb"
-        )
-
-    with c2:
-        st.metric(
-            "Sentinel-2",
-            "Surface Scan Active"
-        )
-
-    with c3:
-        st.metric(
-            "Landsat-8",
-            "Thermal Tracking"
-        )
-
-    with c4:
-        st.metric(
-            "MODIS",
-            "Fire Monitoring"
-        )
-
-    # =========================
-    # AI RISK ENGINE
-    # =========================
-
-    st.markdown("---")
-
-    st.header("🧠 AI RISK ENGINE")
-
-    methane_array = np.array([
-        [1880],
-        [1890],
-        [1905],
-        [1940],
-        [2100]
-    ])
-
-    model = IsolationForest(
-        contamination=0.2,
-        random_state=42
+with sat3:
+    st.metric(
+        "Sentinel-1",
+        "Radar"
     )
 
-    model.fit(methane_array)
-
-    predictions = model.predict(
-        methane_array
+with sat4:
+    st.metric(
+        "Landsat-8/9",
+        "Thermal"
     )
 
-    anomaly_count = list(predictions).count(-1)
+with sat5:
+    st.metric(
+        "MODIS",
+        "Fire"
+    )
 
-    if anomaly_count > 0:
+st.markdown("---")
 
-        st.error(
-            f"🚨 {anomaly_count} Environmental Anomalies Detected"
-        )
+# =========================
+# LIVE SATELLITE MAP
+# =========================
 
-    else:
+st.header("🌍 LIVE SATELLITE HEATMAP")
 
-        st.success(
-            "✅ No major anomalies detected"
-        )
+m = folium.Map(
+    location=[22.5, 78.9],
+    zoom_start=5,
+    tiles="CartoDB dark_matter"
+)
 
-    # =========================
-    # LIVE FIRE INTELLIGENCE
-    # =========================
+for i, row in df.iterrows():
 
-    st.markdown("---")
+    try:
 
-    st.header("🔥 LIVE FIRE INTELLIGENCE")
+        methane = float(row["Methane_PPB"])
 
-    fire_alert = random.choice([
-        "No wildfire risk detected",
-        "Thermal hotspot detected",
-        "Possible landfill fire anomaly",
-        "Industrial heat spike detected"
-    ])
+        if methane > 1950:
+            color = "red"
 
-    if "No" in fire_alert:
-        st.success(fire_alert)
+        elif methane > 1850:
+            color = "orange"
 
-    else:
-        st.warning(fire_alert)
+        else:
+            color = "yellow"
 
-    # =========================
-    # CLIMATE GRID
-    # =========================
+        folium.CircleMarker(
 
-    st.markdown("---")
+            location=[
+                float(row["Lat"]),
+                float(row["Lon"])
+            ],
 
-    st.header("🌍 CLIMATE GRID")
+            radius=8,
 
-    grid1, grid2, grid3 = st.columns(3)
+            popup=f"""
+            LOCATION: {row['Location_Name']}
+            Methane: {row['Methane_PPB']}
+            Drill Depth: {row['Drill_Depth_M']}
+            Temp: {row['Core_Temp_C']}
+            Revenue: {row['Revenue_Lakhs_Year']}
+            Asset Value: {row['Total_Asset_Value_Cr']}
+            """,
 
-    with grid1:
-        st.metric(
-            "Air Toxicity",
-            f"{random.randint(60,95)}%"
-        )
+            color=color,
+            fill=True,
+            fill_color=color
 
-    with grid2:
-        st.metric(
-            "Heat Risk",
-            f"{random.randint(50,90)}%"
-        )
+        ).add_to(m)
 
-    with grid3:
-        st.metric(
-            "Landfill Expansion",
-            f"{random.randint(10,40)}%"
-        )
+    except:
+        pass
 
-except Exception as e:
-
-    st.error(f"Satellite Engine Error: {e}")
-
-st.info("Earth Engine connected successfully.")
-
-st.metric(
-    "Real-Time Methane Level",
-    f"{round(value,2)} ppb"
+st_folium(
+    m,
+    width=1400,
+    height=700
 )
 
 st.markdown("---")
 
 # =========================
-# REAL LANDFILL DATABASE
+# LIVE FEED
 # =========================
 
-landfills = {
-    "Delhi Landfill": [28.6139, 77.2090],
-    "Mumbai Landfill": [19.0760, 72.8777],
-    "Hyderabad Landfill": [17.3850, 78.4867],
-    "Chennai Landfill": [13.0827, 80.2707],
-    "Bangalore Landfill": [12.9716, 77.5946]
-}
+st.header("📈 LIVE ENVIRONMENT FEED")
 
-# =========================
-# LIVE LANDFILL MONITORING
-# =========================
+feed_text = ""
 
-st.header("LIVE LANDFILL MONITORING")
-
-for name, coords in landfills.items():
-
-    lat = coords[0]
-    lon = coords[1]
+for i, row in df.head(100).iterrows():
 
     try:
 
-        region = ee.Geometry.Point([lon, lat]).buffer(5000)
-
-        methane_data = image.reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=region,
-            scale=7000,
-            maxPixels=1e9
-        )
-
-        landfill_value = methane_data.get(
-            'CH4_column_volume_mixing_ratio_dry_air'
-        ).getInfo()
+        feed_text += f"""
+        🔴 {row['Location_Name']}
+        | Methane: {round(row['Methane_PPB'],2)}
+        | Depth: {round(row['Drill_Depth_M'],2)}
+        | Temp: {round(row['Core_Temp_C'],2)}
+        | Revenue: ₹{round(row['Revenue_Lakhs_Year'],2)}L
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        """
 
     except:
-        landfill_value = random.randint(1850, 1980)
+        pass
 
-    st.metric(name, f"{round(landfill_value,2)} ppb")
-
-    if landfill_value > 1920:
-        st.error(f"🚨 ALERT: High methane detected at {name}")
-
-st.markdown("---")
-
-# =========================
-# LIVE SATELLITE HEATMAP
-# =========================
-
-st.header("🌍 LIVE SATELLITE HEATMAP")
-
-try:
-
-    methane_map = folium.Map(
-        location=[22.5, 78.9],
-        zoom_start=5,
-        tiles="CartoDB dark_matter"
-    )
-
-    hotspot_colors = [
-        "red",
-        "orange",
-        "yellow",
-        "purple",
-        "green"
-    ]
-
-    i = 0
-
-    for name, coords in landfills.items():
-
-        folium.CircleMarker(
-            location=coords,
-            radius=35,
-            popup=name,
-            color=hotspot_colors[i],
-            fill=True,
-            fill_color=hotspot_colors[i]
-        ).add_to(methane_map)
-
-        i += 1
-
-    st_folium(
-        methane_map,
-        width=1200,
-        height=650
-    )
-
-except Exception as e:
-    st.error(e)
+st.markdown(f"""
+<marquee
+behavior="scroll"
+direction="left"
+scrollamount="10"
+style="
+color:#00ff99;
+font-size:22px;
+font-weight:bold;
+">
+{feed_text}
+</marquee>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
 # =========================
-# AI HOTSPOTS
+# LIVE DATABASE
 # =========================
 
-st.header("AI Hotspot Detection")
+st.header("📊 LIVE LANDFILL DATABASE")
 
-st.warning("⚠️ Delhi Industrial Methane Spike Detected")
-
-st.warning("⚠️ Mumbai Waste Heat Zone Active")
-
-st.warning("⚠️ Chennai Atmospheric Pressure Shift")
-
-st.warning("⚠️ Hyderabad Toxic Gas Cluster Detected")
-
-st.markdown("---")
-
-# =========================
-# THREAT SCORE
-# =========================
-
-st.header("AI Threat Intelligence")
-
-threat_score = random.randint(72, 98)
-
-if threat_score > 90:
-    st.error(f"🚨 Critical Environmental Threat: {threat_score}%")
-
-elif threat_score > 80:
-    st.warning(f"⚠️ High Risk Zone: {threat_score}%")
-
-else:
-    st.success(f"✅ Stable Environmental Zone: {threat_score}%")
-
-st.markdown("---")
-
-# =========================
-# AI PREDICTION ENGINE
-# =========================
-
-st.header("AI Prediction Engine")
-
-prediction = random.choice([
-    "High methane spike expected in next 48 hours",
-    "Industrial heat anomaly detected",
-    "Air quality deterioration predicted",
-    "Extreme climate fluctuation detected",
-    "Stable environmental pattern"
-])
-
-st.warning(prediction)
-
-st.markdown("---")
-
-# =========================
-# COMMAND CENTER
-# =========================
-
-st.header("Command Center")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.success("🛰️ Satellite Online")
-
-with c2:
-    st.warning("📡 AI Tracking Active")
-
-with c3:
-    st.error("🚨 Risk Monitoring Enabled")
-
-st.markdown("---")
-
-# =========================
-# LIVE TREND GRAPH
-# =========================
-
-st.header("Methane Trend Intelligence")
-
-df = pd.DataFrame({
-    "Time": [
-        "10AM",
-        "11AM",
-        "12PM",
-        "1PM",
-        "2PM",
-        "3PM",
-        "4PM"
-    ],
-    "Methane": [
-        1880,
-        1895,
-        1910,
-        1930,
-        1922,
-        1940,
-        1955
-    ]
-})
-
-fig = px.line(
+st.dataframe(
     df,
-    x="Time",
-    y="Methane",
-    title="Live Methane Trend"
+    use_container_width=True
+)
+
+st.markdown("---")
+
+# =========================
+# AI ANALYTICS
+# =========================
+
+st.header("🔥 AI Risk Analytics")
+
+fig = px.scatter(
+
+    df,
+
+    x="Core_Temp_C",
+    y="Methane_PPB",
+
+    size="Revenue_Lakhs_Year",
+
+    color="Methane_PPB",
+
+    hover_name="Location_Name"
 )
 
 st.plotly_chart(
@@ -647,118 +392,51 @@ st.plotly_chart(
 st.markdown("---")
 
 # =========================
-# CLIMATE ALERTS
+# AI ALERT ENGINE
 # =========================
 
-st.header("Climate Intelligence Alerts")
+st.header("🚨 AI ALERT ENGINE")
 
-st.error("🚨 High Atmospheric Toxicity Risk Detected")
+high_risk = df[df["Methane_PPB"] > 1950]
 
-st.success("✅ AI Prediction Engine Running Normally")
+for i, row in high_risk.iterrows():
 
-st.warning("⚠️ Heatwave Risk Increasing")
+    st.error(
+        f"""
+        HIGH RISK DETECTED:
+        {row['Location_Name']}
+        | Methane: {row['Methane_PPB']}
+        | Depth: {row['Drill_Depth_M']}
+        """
+    )
+
+st.success("✅ AI Prediction Engine Active")
 
 st.markdown("---")
 
 # =========================
-# INDUSTRIAL LEAK INTEL
+# INDUSTRIAL INTELLIGENCE
 # =========================
 
-st.header("Industrial Leak Intelligence")
+st.header("🏭 INDUSTRIAL LEAK INTELLIGENCE")
 
-city = st.selectbox(
-    "Select Monitoring City",
-    [
-        "Delhi",
-        "Mumbai",
-        "Chennai",
-        "Bangalore",
-        "Hyderabad"
-    ]
+top_risk = df.sort_values(
+    by="Methane_PPB",
+    ascending=False
+).head(10)
+
+st.dataframe(
+    top_risk[
+        [
+            "Location_Name",
+            "Methane_PPB",
+            "Drill_Depth_M",
+            "Core_Temp_C",
+            "Revenue_Lakhs_Year"
+        ]
+    ],
+    use_container_width=True
 )
-
-st.info(f"Current Monitoring City: {city}")
-
-st.write(f"Detection Mode Active: {mode}")
-
-st.markdown("---")
-
-# =========================
-# SATELLITE MODES
-# =========================
-
-st.header("Satellite Scan Modes")
-
-st.success(f"🛰️ Active Scan Mode: {mode}")
-
-st.markdown("---")
-
-# =========================
-# AI SURVEILLANCE GRID
-# =========================
-
-st.header("AI Environmental Surveillance Grid")
-
-grid_col1, grid_col2 = st.columns(2)
-
-with grid_col1:
-
-    st.info("North India Monitoring Active")
-
-    st.metric(
-        "Pollution Density",
-        f"{random.randint(70,99)}%"
-    )
-
-with grid_col2:
-
-    st.info("South India Monitoring Active")
-
-    st.metric(
-        "Climate Stability",
-        f"{random.randint(60,90)}%"
-    )
-
-st.markdown("---")
-
-# =========================
-# LIVE INTELLIGENCE FEED
-# =========================
-
-st.header("Live Intelligence Feed")
-
-feed = random.choice([
-    "Delhi industrial activity rising",
-    "Mumbai heat concentration increasing",
-    "Hyderabad air toxicity detected",
-    "Chennai climate fluctuations rising",
-    "Environmental patterns stable",
-    "Methane anomaly detected near landfill"
-])
-
-st.code(feed)
-
-st.markdown("---")
-
-# =========================
-# SYSTEM STATUS
-# =========================
-
-st.header("System Core Status")
-
-s1, s2, s3, s4 = st.columns(4)
-
-with s1:
-    st.success("AI ONLINE")
-
-with s2:
-    st.success("SATELLITES ACTIVE")
-
-with s3:
-    st.warning("LAND FILL TRACKING")
-
-with s4:
-    st.error("TOXICITY RISK")
 
 st.markdown("---")
 
@@ -767,5 +445,5 @@ st.markdown("---")
 # =========================
 
 st.caption(
-    "ZERO WASTE AI • Real-Time Environmental Intelligence Platform"
+    "ZERO WASTE AI • Real-Time Multi-Satellite Environmental Intelligence System"
 )
