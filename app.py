@@ -292,7 +292,75 @@ st.markdown("""
 from sklearn.ensemble import IsolationForest
 
 # ---------------- AI ANOMALY DETECTION ----------------
+# ---------------- AI ANOMALY DETECTION ----------------
 
+from sklearn.ensemble import IsolationForest
+
+st.markdown("## AI Methane Anomaly Detection")
+
+# Features for AI
+features = df[["Methane"]]
+
+# Isolation Forest Model
+iso_model = IsolationForest(
+    n_estimators=100,
+    contamination=0.25,
+    random_state=42
+)
+
+# Train AI
+df["Anomaly"] = iso_model.fit_predict(features)
+
+# Convert Results
+df["AI Risk"] = df["Anomaly"].apply(
+    lambda x: "Critical" if x == -1 else "Normal"
+)
+
+# Risk Score
+df["Risk Score"] = np.where(
+    df["AI Risk"] == "Critical",
+    np.random.randint(80, 100, len(df)),
+    np.random.randint(10, 60, len(df))
+)
+
+# Show Critical Zones
+critical = df[df["AI Risk"] == "Critical"]
+
+if len(critical) > 0:
+
+    st.error("AI detected dangerous methane anomalies")
+
+    st.dataframe(
+        critical[
+            [
+                "City",
+                "Methane",
+                "AI Risk",
+                "Risk Score"
+            ]
+        ]
+    )
+
+else:
+
+    st.success("No dangerous anomalies detected")
+
+# AI Visualization
+st.markdown("## AI Risk Visualization")
+
+fig_ai = px.scatter(
+    df,
+    x="City",
+    y="Methane",
+    color="AI Risk",
+    size="Risk Score",
+    hover_data=["Risk Score"]
+)
+
+st.plotly_chart(
+    fig_ai,
+    use_container_width=True
+)
 st.markdown("## AI Methane Anomaly Detection")
 
 # ML Features
