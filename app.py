@@ -4,8 +4,6 @@ import ee
 import json
 import os
 import folium
-import tempfile
-import zipfile
 
 from streamlit_folium import st_folium
 
@@ -265,134 +263,62 @@ st_folium(
 st.markdown("---")
 
 # =========================================================
-# FILE UPLOAD
+# CSV FILE UPLOAD
 # =========================================================
 
-st.header("📂 Upload Intelligence File")
+st.header("📂 Upload Intelligence CSV")
 
-st.write("Upload CSV / XLSX / ZIP Intelligence File")
+st.write("Upload Large Intelligence CSV File")
 
 uploaded_file = st.file_uploader(
-    "Upload File",
-    type=["csv", "xlsx", "zip"]
+    "Upload CSV",
+    type=["csv"]
 )
 
 # =========================================================
-# PROCESS FILE
+# PROCESS CSV
 # =========================================================
 
 if uploaded_file is not None:
 
     try:
 
-        file_name = uploaded_file.name.lower()
+        # =========================
+        # LOAD CSV
+        # =========================
 
-        # ============================
-        # CSV
-        # ============================
+        df = pd.read_csv(
+            uploaded_file,
+            low_memory=False
+        )
 
-        if file_name.endswith(".csv"):
-
-            df = pd.read_csv(uploaded_file)
-
-        # ============================
-        # XLSX
-        # ============================
-
-        elif file_name.endswith(".xlsx"):
-
-            df = pd.read_excel(
-                uploaded_file,
-                engine="openpyxl"
-            )
-
-        # ============================
-        # ZIP
-        # ============================
-
-        elif file_name.endswith(".zip"):
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-
-                zip_path = f"{tmpdir}/data.zip"
-
-                with open(zip_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-
-                with zipfile.ZipFile(zip_path, 'r', allowZip64=True) as zip_ref: zip_ref.extractall(tmpdir)
-
-                data_files = []
-
-                for root, dirs, files in os.walk(tmpdir):
-
-                    for file in files:
-
-                        if (
-                            file.endswith(".csv")
-                            or
-                            file.endswith(".xlsx")
-                        ):
-
-                            data_files.append(
-                                os.path.join(root, file)
-                            )
-
-                if len(data_files) > 0:
-
-                    first_file = data_files[0]
-
-                    if first_file.endswith(".csv"):
-
-                        df = pd.read_csv(first_file)
-
-                    else:
-
-                        df = pd.read_excel(
-                            first_file,
-                            engine="openpyxl"
-                        )
-
-                else:
-
-                    st.error(
-                        "No CSV or XLSX found inside ZIP"
-                    )
-
-                    st.stop()
-
-        else:
-
-            st.error("Unsupported File Type")
-
-            st.stop()
-
-        # =================================================
+        # =========================
         # SUCCESS
-        # =================================================
+        # =========================
 
-        st.success("✅ Intelligence File Loaded")
+        st.success("✅ Intelligence CSV Loaded Successfully")
 
-        # =================================================
-        # DATA OVERVIEW
-        # =================================================
+        # =========================
+        # METRICS
+        # =========================
 
-        st.subheader("📊 Dataset Overview")
+        st.subheader("📊 Dataset Metrics")
 
-        col1, col2, col3 = st.columns(3)
+        c1, c2, c3 = st.columns(3)
 
-        with col1:
+        with c1:
             st.metric(
-                "Rows",
+                "Total Rows",
                 len(df)
             )
 
-        with col2:
+        with c2:
             st.metric(
                 "Columns",
                 len(df.columns)
             )
 
-        with col3:
+        with c3:
             st.metric(
                 "Live Status",
                 "ACTIVE"
@@ -400,19 +326,19 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
-        # =================================================
-        # COLUMN VIEW
-        # =================================================
+        # =========================
+        # COLUMN NAMES
+        # =========================
 
         st.subheader("🧠 Intelligence Columns")
 
-        st.write(list(df.columns))
+        st.write(df.columns.tolist())
 
         st.markdown("---")
 
-        # =================================================
-        # DATAFRAME
-        # =================================================
+        # =========================
+        # DATA TABLE
+        # =========================
 
         st.subheader("📄 Live Intelligence Table")
 
@@ -424,9 +350,35 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
-        # =================================================
-        # MAP FROM LAT LON
-        # =================================================
+        # =========================
+        # SEARCH SYSTEM
+        # =========================
+
+        st.subheader("🔍 Search Intelligence")
+
+        search = st.text_input(
+            "Search Any Value"
+        )
+
+        if search:
+
+            filtered = df.astype(str).apply(
+                lambda x: x.str.contains(
+                    search,
+                    case=False
+                )
+            ).any(axis=1)
+
+            st.dataframe(
+                df[filtered],
+                use_container_width=True
+            )
+
+        st.markdown("---")
+
+        # =========================
+        # DETECT LAT LON
+        # =========================
 
         lat_cols = [
             c for c in df.columns
@@ -439,12 +391,18 @@ if uploaded_file is not None:
             or "lng" in c.lower()
         ]
 
+        # =========================
+        # MAP
+        # =========================
+
         if len(lat_cols) > 0 and len(lon_cols) > 0:
 
             lat_col = lat_cols[0]
             lon_col = lon_cols[0]
 
-            st.subheader("🛰️ Live Landfill Intelligence Map")
+            st.subheader(
+                "🛰️ Live Landfill Intelligence Map"
+            )
 
             map2 = folium.Map(
                 location=[20.59, 78.96],
@@ -452,7 +410,7 @@ if uploaded_file is not None:
                 tiles="CartoDB dark_matter"
             )
 
-            sample_df = df.head(500)
+            sample_df = df.head(1000)
 
             for i, row in sample_df.iterrows():
 
@@ -461,11 +419,11 @@ if uploaded_file is not None:
                     lat = float(row[lat_col])
                     lon = float(row[lon_col])
 
-                    popup_data = ""
+                    popup_text = ""
 
-                    for col in df.columns[:10]:
+                    for col in df.columns[:8]:
 
-                        popup_data += (
+                        popup_text += (
                             f"<b>{col}</b>: "
                             f"{row[col]}<br>"
                         )
@@ -473,7 +431,7 @@ if uploaded_file is not None:
                     folium.CircleMarker(
                         location=[lat, lon],
                         radius=4,
-                        popup=popup_data,
+                        popup=popup_text,
                         color="lime",
                         fill=True,
                         fill_color="lime"
@@ -491,7 +449,7 @@ if uploaded_file is not None:
         else:
 
             st.warning(
-                "Latitude / Longitude columns not found"
+                "Latitude / Longitude Columns Not Found"
             )
 
     except Exception as e:
