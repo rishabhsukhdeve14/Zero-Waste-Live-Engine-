@@ -1,3 +1,38 @@
+import ee
+try:
+    ee.Initialize(project='stalwart-fx-490910-e3')
+except:
+    ee.Authenticate()
+    ee.Initialize(project='stalwart-fx-490910-e3')
+st.markdown("## Real Satellite Methane Intelligence")
+
+try:
+
+    dataset = ee.ImageCollection(
+        'COPERNICUS/S5P/OFFL/L3_CH4'
+    ).select(
+        'CH4_column_volume_mixing_ratio_dry_air'
+    ).filterDate(
+        '2025-01-01',
+        '2025-12-31'
+    )
+
+    image = dataset.mean()
+
+    india = ee.Geometry.Point([78.9629, 20.5937])
+
+    methane_value = image.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=india,
+        scale=50000
+    ).getInfo()
+
+    st.success("Live satellite connection successful")
+
+    st.write(methane_value)
+
+except Exception as e:
+    st.error(f"Satellite Error: {e}")
 import streamlit as st
 import pandas as pd
 import numpy as np
