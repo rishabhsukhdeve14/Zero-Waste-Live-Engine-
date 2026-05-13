@@ -18,3 +18,4 @@ google-auth
 folium
 streamlit-autorefresh
 opencv-python-headless
+sqlalchemy
