@@ -169,9 +169,28 @@ st.markdown("---")
 @st.cache_data(ttl=10)
 def load_data():
 
-    df = pd.read_csv(
-        "ZeroWaste_V15_Satellite_Intelligence.csv"
-    )
+# =========================
+# LIVE CSV UPLOAD SYSTEM
+# =========================
+
+st.header("📂 Upload Intelligence CSV")
+
+uploaded_file = st.file_uploader(
+    "Upload Any Landfill Intelligence CSV",
+    type=["csv"]
+)
+
+if uploaded_file is not None:
+
+    df = pd.read_csv(uploaded_file)
+
+    st.success("✅ Live Intelligence File Loaded")
+
+else:
+
+    st.warning("⚠️ Please Upload CSV File")
+
+    st.stop()
 
     return df
 
