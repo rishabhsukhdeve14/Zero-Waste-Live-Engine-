@@ -1,73 +1,99 @@
-import ee
-try:
-    ee.Initialize(project='stalwart-fx-490910-e3')
-except:
-    ee.Authenticate()
-    ee.Initialize(project='stalwart-fx-490910-e3')
-st.markdown("## Real Satellite Methane Intelligence")
-
-try:
-
-    dataset = ee.ImageCollection(
-        'COPERNICUS/S5P/OFFL/L3_CH4'
-    ).select(
-        'CH4_column_volume_mixing_ratio_dry_air'
-    ).filterDate(
-        '2025-01-01',
-        '2025-12-31'
-    )
-
-    image = dataset.mean()
-
-    india = ee.Geometry.Point([78.9629, 20.5937])
-
-    methane_value = image.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=india,
-        scale=50000
-    ).getInfo()
-
-    st.success("Live satellite connection successful")
-
-    st.write(methane_value)
-
-except Exception as e:
-    st.error(f"Satellite Error: {e}")
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import IsolationForest
 
-# PAGE CONFIG
+import ee
+
+# ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
     page_title="ZeroWaste.AI",
     layout="wide"
 )
 
-# TITLE
+# ---------------- EARTH ENGINE ----------------
 
-st.title("ZeroWaste.AI")
-st.header("Multi-Satellite Intelligence Dashboard")
+try:
+    ee.Initialize(project='stalwart-fx-490910-e3')
+    satellite_connected = True
 
-st.write("AI + ESG + Methane Intelligence + Smart Waste Detection")
+except Exception as e:
+    satellite_connected = False
+    satellite_error = str(e)
 
-# DATA
+# ---------------- CUSTOM CSS ----------------
+
+st.markdown("""
+<style>
+
+.main {
+    background-color: #0e1117;
+    color: white;
+}
+
+.big-title {
+    font-size: 55px;
+    font-weight: bold;
+    color: #00ffcc;
+}
+
+.section-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+}
+
+.metric-box {
+    background-color: #161b22;
+    padding: 15px;
+    border-radius: 15px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- TITLE ----------------
+
+st.markdown(
+    '<p class="big-title">ZeroWaste.AI</p>',
+    unsafe_allow_html=True
+)
+
+st.markdown("""
+# Multi-Satellite Intelligence Dashboard
+
+AI + ESG + Methane Intelligence + Smart Waste Detection
+""")
+
+# ---------------- SATELLITE STATUS ----------------
+
+st.markdown("## Satellite Engine")
+
+if satellite_connected:
+    st.success("Google Earth Engine Connected")
+
+else:
+    st.error("Satellite Engine Not Connected")
+
+# ---------------- DEMO DATA ----------------
 
 cities = [
     "Delhi",
     "Mumbai",
     "Hyderabad",
     "Chennai",
-    "Kolkata",
     "Bangalore",
+    "Kolkata",
     "Pune",
     "Ahmedabad"
 ]
 
-methane = np.random.randint(1700, 2800, len(cities))
+methane = np.random.randint(1800, 2300, len(cities))
 
 latitudes = np.random.uniform(8, 35, len(cities))
 longitudes = np.random.uniform(68, 97, len(cities))
@@ -79,7 +105,22 @@ df = pd.DataFrame({
     "lon": longitudes
 })
 
-# LINEAR REGRESSION
+# ---------------- ESG SCORE ----------------
+
+df["ESG Score"] = np.random.uniform(
+    40,
+    95,
+    len(df)
+).round(1)
+
+# ---------------- ALERTS ----------------
+
+df["Alert"] = df["Methane"].apply(
+    lambda x:
+    "Critical" if x > 2200 else "Normal"
+)
+
+# ---------------- AI PREDICTION ----------------
 
 df["Index"] = np.arange(len(df))
 
@@ -87,41 +128,40 @@ X = df[["Index"]]
 y = df["Methane"]
 
 model = LinearRegression()
+
 model.fit(X, y)
 
-future = np.array([[len(df) + 24]])
+future = np.array([[len(df) + 1]])
 
 prediction = model.predict(future)
 
-predicted_value = round(float(prediction[0]), 2)
+predicted_value = max(
+    min(
+        round(float(prediction[0]), 2),
+        2500
+    ),
+    1700
+)
 
-# ESG SCORE
-
-df["ESG Score"] = np.random.uniform(
-    10,
-    99,
-    len(df)
-).round(1)
-
-# ISOLATION FOREST
-
-features = df[["Methane"]]
+# ---------------- ISOLATION FOREST ----------------
 
 iso_model = IsolationForest(
-    n_estimators=100,
-    contamination=0.25,
+    contamination=0.2,
     random_state=42
 )
 
-df["Anomaly"] = iso_model.fit_predict(features)
-
-df["AI Risk"] = df["Anomaly"].apply(
-    lambda x: "Critical" if x == -1 else "Normal"
+df["Anomaly"] = iso_model.fit_predict(
+    df[["Methane"]]
 )
 
-# METRICS
+df["Anomaly"] = df["Anomaly"].map({
+    1: "Normal",
+    -1: "Anomaly"
+})
 
-st.subheader("Global Intelligence Metrics")
+# ---------------- METRICS ----------------
+
+st.markdown("## Global Intelligence Metrics")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -137,7 +177,7 @@ col2.metric(
 
 col3.metric(
     "Critical Zones",
-    len(df[df["AI Risk"] == "Critical"])
+    len(df[df["Methane"] > 2200])
 )
 
 col4.metric(
@@ -145,58 +185,55 @@ col4.metric(
     predicted_value
 )
 
-# DATA TABLE
+# ---------------- LIVE DATA ----------------
 
-st.subheader("Live Intelligence Feed")
+st.markdown("## Live Intelligence Feed")
 
 st.dataframe(df)
 
-# CHART
+# ---------------- AI PREDICTION ----------------
 
-st.subheader("Methane Trend Analysis")
+st.markdown("## AI Methane Prediction")
+
+st.metric(
+    "Predicted Methane Next 24h",
+    predicted_value
+)
+
+# ---------------- LINE CHART ----------------
+
+st.markdown("## Methane Trend")
 
 st.line_chart(df["Methane"])
 
-# AI DETECTION
+# ---------------- ANOMALY DETECTION ----------------
 
-st.subheader("AI Methane Anomaly Detection")
+st.markdown("## AI Anomaly Detection")
 
-critical = df[df["AI Risk"] == "Critical"]
+anomalies = df[df["Anomaly"] == "Anomaly"]
 
-if len(critical) > 0:
+if len(anomalies) > 0:
 
-    st.error("AI detected dangerous methane anomalies")
+    st.warning("AI Detected Environmental Anomalies")
 
-    st.dataframe(
-        critical[
-            [
-                "City",
-                "Methane",
-                "AI Risk"
-            ]
-        ]
-    )
+    st.dataframe(anomalies)
 
 else:
 
-    st.success("No dangerous anomalies detected")
+    st.success("No anomalies detected")
 
-# MAP
+# ---------------- HEATMAP ----------------
 
-st.subheader("Satellite Methane Heatmap")
+st.markdown("## Satellite Heatmap")
 
-fig = px.scatter_mapbox(
+fig = px.density_mapbox(
     df,
-    lat="lat",
-    lon="lon",
-    color="Methane",
-    size="Methane",
-    hover_name="City",
+    lat='lat',
+    lon='lon',
+    z='Methane',
+    radius=25,
+    center=dict(lat=20.59, lon=78.96),
     zoom=3,
-    height=500
-)
-
-fig.update_layout(
     mapbox_style="open-street-map"
 )
 
@@ -205,23 +242,86 @@ st.plotly_chart(
     use_container_width=True
 )
 
-# AI VISUALIZATION
+# ---------------- LIVE MAP ----------------
 
-st.subheader("AI Risk Visualization")
+st.markdown("## Live Waste Intelligence Map")
 
-fig2 = px.scatter(
-    df,
-    x="City",
-    y="Methane",
-    color="AI Risk",
-    size="Methane"
+st.map(df[["lat", "lon"]])
+
+# ---------------- PIE CHART ----------------
+
+st.markdown("## Risk Distribution")
+
+risk_counts = df["Alert"].value_counts()
+
+pie = go.Figure(
+    data=[
+        go.Pie(
+            labels=risk_counts.index,
+            values=risk_counts.values
+        )
+    ]
 )
 
 st.plotly_chart(
-    fig2,
+    pie,
     use_container_width=True
 )
 
-# FOOTER
+# ---------------- TOP DANGEROUS ----------------
 
-st.write("ZeroWaste.AI Intelligence Core Active")
+st.markdown("## Top Critical Zones")
+
+danger = df.sort_values(
+    by="Methane",
+    ascending=False
+)
+
+st.dataframe(danger.head(5))
+
+# ---------------- DOWNLOAD ----------------
+
+csv = df.to_csv(index=False).encode('utf-8')
+
+st.download_button(
+    "Download Intelligence Report",
+    csv,
+    "ZeroWaste_AI_Report.csv",
+    "text/csv"
+)
+
+# ---------------- AI INSIGHTS ----------------
+
+st.markdown("## AI Intelligence Insights")
+
+highest_city = df.loc[
+    df["Methane"].idxmax()
+]
+
+st.warning(
+    f"""
+Highest methane concentration detected in {highest_city['City']}
+
+Methane Level: {highest_city['Methane']}
+
+AI Recommendation:
+Immediate satellite inspection recommended.
+"""
+)
+
+# ---------------- FOOTER ----------------
+
+st.markdown("---")
+
+st.markdown("""
+### ZeroWaste.AI Intelligence Core
+
+Future Features:
+- Real satellite methane
+- Drone intelligence
+- Carbon prediction AI
+- Illegal landfill detection
+- Government intelligence system
+- Climate anomaly engine
+- Smart city environmental scoring
+""")
