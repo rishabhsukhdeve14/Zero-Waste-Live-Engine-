@@ -60,18 +60,37 @@ st.info("Earth Engine connected successfully.")
 st.header("Live Methane Data")
 
 try:
-    image = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4') \
+    collection = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4') \
         .select('CH4_column_volume_mixing_ratio_dry_air') \
-        .filterDate('2025-05-01', '2025-05-10') \
-        .mean()
+        .filterDate('2024-01-01', '2024-12-31')
 
-    methane_value = image.reduceRegion(
+    image = collection.mean()
+
+    region = ee.Geometry.Rectangle([68, 6, 97, 37])
+
+    methane = image.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=ee.Geometry.Point([77.1025, 28.7041]),
-        scale=1000
-    ).getInfo()
+        geometry=region,
+        scale=7000,
+        maxPixels=1e9
+    )
 
-    st.success(f"Live Methane Data: {methane_value}")
+    value = methane.get('CH4_column_volume_mixing_ratio_dry_air').getInfo()
+
+    st.metric("India Methane Level", f"{round(value,2)} ppb")
+
+    map_id = image.getMapId({
+        'min': 1750,
+        'max': 1950,
+        'palette': ['blue', 'green', 'yellow', 'red']
+    })
+
+    tile_url = map_id['tile_fetcher'].url_format
+
+    st.markdown(f"""
+    ### Live Satellite Layer
+    [Open Methane Map]({tile_url})
+    """)
 
 except Exception as e:
-    st.error(f"Data fetch error: {e}")
+    st.error(f"Error: {e}")
