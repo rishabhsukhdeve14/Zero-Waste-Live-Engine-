@@ -9,3 +9,6 @@ plotly
 pdfplumber
 openpyxl
 scikit-learn
+numpy
+earthengine-api
+geemap
