@@ -18,11 +18,6 @@ earthengine-api
 google-auth
 folium
 streamlit-autorefresh
-pandas
-numpy
-scikit-learn
 opencv-python-headless
 tensorflow
 ultralytics
-geemap
-requests
