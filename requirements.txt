@@ -11,7 +11,6 @@ openpyxl
 scikit-learn
 numpy
 earthengine-api
-geemap
 streamlit-autorefresh
 streamlit
 earthengine-api
