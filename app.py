@@ -1,23 +1,26 @@
 import streamlit as st
 import pandas as pd
 import ee
-import os
 import json
+import os
 import folium
+import tempfile
+import zipfile
+
 from streamlit_folium import st_folium
 
-# =========================
+# =========================================================
 # PAGE CONFIG
-# =========================
+# =========================================================
 
 st.set_page_config(
     page_title="ZERO WASTE AI",
     layout="wide"
 )
 
-# =========================
+# =========================================================
 # CUSTOM CSS
-# =========================
+# =========================================================
 
 st.markdown("""
 <style>
@@ -27,41 +30,26 @@ st.markdown("""
     color: white;
 }
 
-h1, h2, h3 {
+h1,h2,h3,h4 {
     color: #00ffe1;
-    font-family: Arial;
 }
 
-[data-testid="stMetricValue"] {
-    color: #00ff99;
-    font-size: 40px;
-    font-weight: bold;
+[data-testid="stMetricValue"]{
+    color:#00ff99;
+    font-size:40px;
+    font-weight:bold;
 }
 
-[data-testid="stMetricLabel"] {
-    color: white;
-}
-
-div.stAlert {
-    background-color: rgba(0,255,150,0.08);
-    border: 1px solid #00ff99;
-    border-radius: 14px;
-}
-
-html, body, [class*="css"] {
-    color: white;
-}
-
-section[data-testid="stSidebar"] {
-    background-color: #071028;
+section[data-testid="stSidebar"]{
+    background-color:#071028;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# GOOGLE EARTH ENGINE LOGIN
-# =========================
+# =========================================================
+# EARTH ENGINE LOGIN
+# =========================================================
 
 try:
 
@@ -76,15 +64,15 @@ try:
 
     ee.Initialize(credentials)
 
-    earth_engine_status = "✅ Multi-Satellite Engine Connected"
+    earth_status = "✅ Multi-Satellite Engine Connected"
 
 except Exception as e:
 
-    earth_engine_status = f"❌ Earth Engine Error: {e}"
+    earth_status = f"❌ Earth Engine Error: {e}"
 
-# =========================
+# =========================================================
 # SIDEBAR
-# =========================
+# =========================================================
 
 st.sidebar.title("ZERO WASTE AI")
 
@@ -92,10 +80,16 @@ st.sidebar.success("🟢 SYSTEM ONLINE")
 
 city = st.sidebar.selectbox(
     "Monitor City",
-    ["Delhi", "Mumbai", "Chennai", "Bangalore", "Hyderabad"]
+    [
+        "Delhi",
+        "Mumbai",
+        "Chennai",
+        "Bangalore",
+        "Hyderabad"
+    ]
 )
 
-scan = st.sidebar.slider(
+sensitivity = st.sidebar.slider(
     "AI Scan Sensitivity",
     0,
     100,
@@ -106,47 +100,43 @@ mode = st.sidebar.selectbox(
     "Detection Mode",
     [
         "Waste Monitoring",
-        "Methane Intelligence",
-        "Fire Detection",
-        "Thermal Analysis"
+        "Methane Scan",
+        "Thermal Detection",
+        "Climate Intelligence"
     ]
 )
 
-# =========================
+# =========================================================
 # HEADER
-# =========================
+# =========================================================
 
-st.markdown("""
-<h1 style='font-size:70px; color:#00ffe1;'>
-ZERO<br>WASTE AI
-</h1>
-
-<h3 style='color:white;'>
-Real-Time Multi-Satellite Environmental Intelligence System
-</h3>
-""", unsafe_allow_html=True)
+st.title("ZERO WASTE AI")
 
 st.subheader(
-    "AI + ESG + Methane + Landfill + Climate Intelligence"
+    "Real-Time Multi-Satellite Environmental Intelligence System"
 )
+
+st.markdown("""
+AI + ESG + Methane + Landfill + Climate Intelligence
+""")
 
 st.markdown("---")
 
-# =========================
-# SATELLITE ENGINE
-# =========================
+# =========================================================
+# SATELLITE STATUS
+# =========================================================
 
 st.header("Satellite Engine")
 
-st.success(earth_engine_status)
+st.success(earth_status)
 
 st.warning("⚠️ HIGH METHANE ACTIVITY DETECTED")
 
 st.markdown("---")
 
-# =========================
-# LIVE SATELLITE DATA
-# =========================
+# =========================================================
+# LIVE METHANE
+# =========================================================
 
 try:
 
@@ -161,9 +151,7 @@ try:
 
     image = collection.mean()
 
-    region = ee.Geometry.Rectangle(
-        [68, 6, 97, 37]
-    )
+    region = ee.Geometry.Rectangle([68, 6, 97, 37])
 
     methane = image.reduceRegion(
         reducer=ee.Reducer.mean(),
@@ -172,17 +160,17 @@ try:
         maxPixels=1e9
     )
 
-    value = methane.get(
+    methane_value = methane.get(
         'CH4_column_volume_mixing_ratio_dry_air'
     ).getInfo()
 
 except:
 
-    value = 1922.53
+    methane_value = 1922.53
 
-# =========================
-# GLOBAL METRICS
-# =========================
+# =========================================================
+# METRICS
+# =========================================================
 
 st.header("Global Intelligence Metrics")
 
@@ -194,17 +182,20 @@ with col1:
 with col2:
     st.metric(
         "India Methane",
-        f"{round(value,2)}"
+        f"{round(methane_value,2)}"
     )
 
 with col3:
-    st.metric("AI Accuracy", "96%")
+    st.metric(
+        "AI Accuracy",
+        "96%"
+    )
 
 st.markdown("---")
 
-# =========================
-# MULTI SATELLITE
-# =========================
+# =========================================================
+# MULTI SATELLITE ENGINE
+# =========================================================
 
 st.header("🛰️ MULTI SATELLITE INTELLIGENCE")
 
@@ -222,233 +213,309 @@ with col3:
     st.metric("Landsat-8", "Thermal Active")
 
 with col4:
-    st.metric("MODIS", "Fire Active")
+    st.metric("MODIS", "Fire Alert")
 
 st.markdown("---")
 
-# =========================
+# =========================================================
 # LIVE MAP
-# =========================
+# =========================================================
 
 st.header("🌍 LIVE SATELLITE HEATMAP")
 
-try:
+m = folium.Map(
+    location=[22.5, 78.9],
+    zoom_start=5,
+    tiles="CartoDB dark_matter"
+)
 
-    methane_map = folium.Map(
-        location=[22.5, 78.9],
-        zoom_start=5,
-        tiles="CartoDB dark_matter"
-    )
+folium.CircleMarker(
+    location=[28.6139, 77.2090],
+    radius=40,
+    popup="Delhi Methane Hotspot",
+    color="red",
+    fill=True,
+    fill_color="red"
+).add_to(m)
 
-    folium.CircleMarker(
-        location=[28.6139, 77.2090],
-        radius=40,
-        popup="Delhi Methane Hotspot",
-        color="red",
-        fill=True,
-        fill_color="red"
-    ).add_to(methane_map)
+folium.CircleMarker(
+    location=[19.0760, 72.8777],
+    radius=30,
+    popup="Mumbai Waste Zone",
+    color="orange",
+    fill=True,
+    fill_color="orange"
+).add_to(m)
 
-    folium.CircleMarker(
-        location=[19.0760, 72.8777],
-        radius=30,
-        popup="Mumbai Waste Zone",
-        color="orange",
-        fill=True,
-        fill_color="orange"
-    ).add_to(methane_map)
+folium.CircleMarker(
+    location=[13.0827, 80.2707],
+    radius=25,
+    popup="Chennai Pollution Cluster",
+    color="yellow",
+    fill=True,
+    fill_color="yellow"
+).add_to(m)
 
-    folium.CircleMarker(
-        location=[13.0827, 80.2707],
-        radius=25,
-        popup="Chennai Pollution Cluster",
-        color="yellow",
-        fill=True,
-        fill_color="yellow"
-    ).add_to(methane_map)
-
-    st_folium(
-        methane_map,
-        width=1400,
-        height=600
-    )
-
-except Exception as e:
-
-    st.error(e)
+st_folium(
+    m,
+    width=1200,
+    height=600
+)
 
 st.markdown("---")
 
-# =========================
-# UPLOAD FILE
-# =========================
+# =========================================================
+# FILE UPLOAD
+# =========================================================
 
 st.header("📂 Upload Intelligence File")
 
+st.write("Upload CSV / XLSX / ZIP Intelligence File")
+
 uploaded_file = st.file_uploader(
-    "Upload CSV or Excel Intelligence File",
-    type=["csv", "xlsx"]
+    "Upload File",
+    type=["csv", "xlsx", "zip"]
 )
+
+# =========================================================
+# PROCESS FILE
+# =========================================================
 
 if uploaded_file is not None:
 
     try:
 
-        # CSV FILE
-        if uploaded_file.name.endswith(".csv"):
+        file_name = uploaded_file.name.lower()
+
+        # ============================
+        # CSV
+        # ============================
+
+        if file_name.endswith(".csv"):
 
             df = pd.read_csv(uploaded_file)
 
-        # EXCEL FILE
-        elif uploaded_file.name.endswith(".xlsx"):
+        # ============================
+        # XLSX
+        # ============================
+
+        elif file_name.endswith(".xlsx"):
 
             df = pd.read_excel(
                 uploaded_file,
                 engine="openpyxl"
             )
 
-        st.success(
-            "✅ Intelligence File Loaded Successfully"
-        )
+        # ============================
+        # ZIP
+        # ============================
 
-        # =========================
-        # METRICS
-        # =========================
+        elif file_name.endswith(".zip"):
 
-        st.subheader("📊 Intelligence Metrics")
+            with tempfile.TemporaryDirectory() as tmpdir:
 
-        c1, c2, c3 = st.columns(3)
+                zip_path = f"{tmpdir}/data.zip"
 
-        with c1:
-            st.metric("Rows", len(df))
+                with open(zip_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
 
-        with c2:
-            st.metric("Columns", len(df.columns))
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(tmpdir)
 
-        with c3:
-            st.metric("Live Status", "ONLINE")
+                data_files = []
+
+                for root, dirs, files in os.walk(tmpdir):
+
+                    for file in files:
+
+                        if (
+                            file.endswith(".csv")
+                            or
+                            file.endswith(".xlsx")
+                        ):
+
+                            data_files.append(
+                                os.path.join(root, file)
+                            )
+
+                if len(data_files) > 0:
+
+                    first_file = data_files[0]
+
+                    if first_file.endswith(".csv"):
+
+                        df = pd.read_csv(first_file)
+
+                    else:
+
+                        df = pd.read_excel(
+                            first_file,
+                            engine="openpyxl"
+                        )
+
+                else:
+
+                    st.error(
+                        "No CSV or XLSX found inside ZIP"
+                    )
+
+                    st.stop()
+
+        else:
+
+            st.error("Unsupported File Type")
+
+            st.stop()
+
+        # =================================================
+        # SUCCESS
+        # =================================================
+
+        st.success("✅ Intelligence File Loaded")
+
+        # =================================================
+        # DATA OVERVIEW
+        # =================================================
+
+        st.subheader("📊 Dataset Overview")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Rows",
+                len(df)
+            )
+
+        with col2:
+            st.metric(
+                "Columns",
+                len(df.columns)
+            )
+
+        with col3:
+            st.metric(
+                "Live Status",
+                "ACTIVE"
+            )
 
         st.markdown("---")
 
-        # =========================
-        # COLUMN LIST
-        # =========================
+        # =================================================
+        # COLUMN VIEW
+        # =================================================
 
-        st.subheader("🧠 Detected Columns")
+        st.subheader("🧠 Intelligence Columns")
 
-        st.write(df.columns.tolist())
+        st.write(list(df.columns))
 
         st.markdown("---")
 
-        # =========================
-        # DATA TABLE
-        # =========================
+        # =================================================
+        # DATAFRAME
+        # =================================================
 
-        st.subheader("📡 Live Intelligence Feed")
+        st.subheader("📄 Live Intelligence Table")
 
         st.dataframe(
-            df.head(1000),
-            use_container_width=True
+            df,
+            use_container_width=True,
+            height=500
         )
 
         st.markdown("---")
 
-        # =========================
-        # AUTO MAP
-        # =========================
+        # =================================================
+        # MAP FROM LAT LON
+        # =================================================
 
-        if (
-            "latitude" in df.columns
-            and
-            "longitude" in df.columns
-        ):
+        lat_cols = [
+            c for c in df.columns
+            if "lat" in c.lower()
+        ]
 
-            st.subheader(
-                "🌍 Live Landfill Intelligence Map"
+        lon_cols = [
+            c for c in df.columns
+            if "lon" in c.lower()
+            or "lng" in c.lower()
+        ]
+
+        if len(lat_cols) > 0 and len(lon_cols) > 0:
+
+            lat_col = lat_cols[0]
+            lon_col = lon_cols[0]
+
+            st.subheader("🛰️ Live Landfill Intelligence Map")
+
+            map2 = folium.Map(
+                location=[20.59, 78.96],
+                zoom_start=4,
+                tiles="CartoDB dark_matter"
             )
 
-            map_df = df.rename(columns={
-                "latitude": "lat",
-                "longitude": "lon"
-            })
+            sample_df = df.head(500)
 
-            st.map(map_df)
+            for i, row in sample_df.iterrows():
 
-        elif (
-            "lat" in df.columns
-            and
-            "lon" in df.columns
-        ):
+                try:
 
-            st.subheader(
-                "🌍 Live Landfill Intelligence Map"
+                    lat = float(row[lat_col])
+                    lon = float(row[lon_col])
+
+                    popup_data = ""
+
+                    for col in df.columns[:10]:
+
+                        popup_data += (
+                            f"<b>{col}</b>: "
+                            f"{row[col]}<br>"
+                        )
+
+                    folium.CircleMarker(
+                        location=[lat, lon],
+                        radius=4,
+                        popup=popup_data,
+                        color="lime",
+                        fill=True,
+                        fill_color="lime"
+                    ).add_to(map2)
+
+                except:
+                    pass
+
+            st_folium(
+                map2,
+                width=1200,
+                height=700
             )
-
-            st.map(df)
 
         else:
 
             st.warning(
-                "⚠️ No latitude/longitude columns found"
-            )
-
-        # =========================
-        # LIVE FILTER
-        # =========================
-
-        st.markdown("---")
-
-        st.subheader("🔍 Live Search")
-
-        search = st.text_input(
-            "Search Any Data"
-        )
-
-        if search:
-
-            filtered = df.astype(str).apply(
-                lambda x: x.str.contains(
-                    search,
-                    case=False
-                )
-            ).any(axis=1)
-
-            st.dataframe(
-                df[filtered],
-                use_container_width=True
+                "Latitude / Longitude columns not found"
             )
 
     except Exception as e:
 
         st.error(e)
 
-else:
-
-    st.warning(
-        "⚠️ Upload CSV Or Excel File To Activate Intelligence System"
-    )
-
-# =========================
-# AI ALERTS
-# =========================
+# =========================================================
+# AI RISK ENGINE
+# =========================================================
 
 st.markdown("---")
 
 st.header("🚨 AI RISK ENGINE")
 
-st.error(
-    "🚨 Environmental anomalies detected"
-)
+st.error("🚨 Environmental anomalies detected")
 
-st.success(
-    "✅ Real-Time Intelligence Running"
-)
+st.success("✅ Real-Time Intelligence Running")
+
+# =========================================================
+# FOOTER
+# =========================================================
 
 st.markdown("---")
-
-# =========================
-# FOOTER
-# =========================
 
 st.caption(
     "ZERO WASTE AI • Real-Time Multi-Satellite Intelligence"
