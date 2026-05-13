@@ -10,7 +10,6 @@ from streamlit_folium import st_folium
 from streamlit_autorefresh import st_autorefresh
 import numpy as np
 import requests
-import geemap.foliumap as geemap
 
 from streamlit_folium import st_folium
 from streamlit_autorefresh import st_autorefresh
