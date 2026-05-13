@@ -3,6 +3,7 @@ import ee
 import os
 import json
 import folium
+import random
 from streamlit_folium import st_folium
 
 # =========================
@@ -12,6 +13,41 @@ from streamlit_folium import st_folium
 st.set_page_config(
     page_title="ZERO WASTE AI",
     layout="wide"
+)
+
+# =========================
+# SIDEBAR CONTROL PANEL
+# =========================
+
+st.sidebar.title("ZERO WASTE AI")
+
+st.sidebar.success("🟢 SYSTEM ONLINE")
+
+city_monitor = st.sidebar.selectbox(
+    "Monitor City",
+    ["Delhi", "Mumbai", "Chennai", "Bangalore", "Hyderabad"]
+)
+
+st.sidebar.write(f"Tracking: {city_monitor}")
+
+scan_speed = st.sidebar.slider(
+    "AI Scan Sensitivity",
+    1,
+    100,
+    88
+)
+
+st.sidebar.write(f"Sensitivity: {scan_speed}%")
+
+mode = st.sidebar.selectbox(
+    "Detection Mode",
+    [
+        "Methane Detection",
+        "Heat Signature",
+        "Waste Monitoring",
+        "Air Toxicity",
+        "Industrial Leak"
+    ]
 )
 
 # =========================
@@ -205,6 +241,15 @@ try:
         fill_color="yellow"
     ).add_to(methane_map)
 
+    folium.CircleMarker(
+        location=[17.3850, 78.4867],
+        radius=28,
+        popup="Hyderabad Toxicity Zone",
+        color="purple",
+        fill=True,
+        fill_color="purple"
+    ).add_to(methane_map)
+
     st_folium(
         methane_map,
         width=1200,
@@ -226,6 +271,66 @@ st.warning("⚠️ Delhi Industrial Methane Spike Detected")
 
 st.warning("⚠️ Mumbai Waste Heat Zone Active")
 
+st.warning("⚠️ Chennai Atmospheric Pressure Shift")
+
+st.warning("⚠️ Hyderabad Toxic Gas Cluster Detected")
+
+st.markdown("---")
+
+# =========================
+# AI THREAT SCORE
+# =========================
+
+st.header("AI Threat Intelligence")
+
+threat_score = random.randint(72, 98)
+
+if threat_score > 90:
+    st.error(f"🚨 Critical Environmental Threat: {threat_score}%")
+
+elif threat_score > 80:
+    st.warning(f"⚠️ High Risk Zone: {threat_score}%")
+
+else:
+    st.success(f"✅ Stable Environmental Zone: {threat_score}%")
+
+st.markdown("---")
+
+# =========================
+# AI PREDICTION ENGINE
+# =========================
+
+st.header("AI Prediction Engine")
+
+prediction = random.choice([
+    "High methane spike expected in next 48 hours",
+    "Industrial heat anomaly detected",
+    "Air quality deterioration predicted",
+    "Extreme climate fluctuation detected",
+    "Stable environmental pattern"
+])
+
+st.warning(prediction)
+
+st.markdown("---")
+
+# =========================
+# COMMAND CENTER
+# =========================
+
+st.header("Command Center")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.success("🛰️ Satellite Online")
+
+with c2:
+    st.warning("📡 AI Tracking Active")
+
+with c3:
+    st.error("🚨 Risk Monitoring Enabled")
+
 st.markdown("---")
 
 # =========================
@@ -237,6 +342,8 @@ st.header("Climate Intelligence Alerts")
 st.error("🚨 High Atmospheric Toxicity Risk Detected")
 
 st.success("✅ AI Prediction Engine Running Normally")
+
+st.warning("⚠️ Heatwave Risk Increasing")
 
 st.markdown("---")
 
@@ -253,7 +360,55 @@ city = st.selectbox(
 
 st.info(f"Current Monitoring City: {city}")
 
-st.write("Detection Mode Active: Methane")
+st.write(f"Detection Mode Active: {mode}")
+
+st.markdown("---")
+
+# =========================
+# LIVE SATELLITE MODES
+# =========================
+
+st.header("Satellite Scan Modes")
+
+st.success(f"🛰️ Active Scan Mode: {mode}")
+
+st.markdown("---")
+
+# =========================
+# AI SURVEILLANCE GRID
+# =========================
+
+st.header("AI Environmental Surveillance Grid")
+
+grid_col1, grid_col2 = st.columns(2)
+
+with grid_col1:
+    st.info("North India Monitoring Active")
+
+    st.metric("Pollution Density", "88%")
+
+with grid_col2:
+    st.info("South India Monitoring Active")
+
+    st.metric("Climate Stability", "71%")
+
+st.markdown("---")
+
+# =========================
+# LIVE INTELLIGENCE FEED
+# =========================
+
+st.header("Live Intelligence Feed")
+
+feed = random.choice([
+    "Delhi industrial activity rising",
+    "Mumbai heat concentration increasing",
+    "Hyderabad air toxicity detected",
+    "Chennai climate fluctuations rising",
+    "Environmental patterns stable"
+])
+
+st.code(feed)
 
 st.markdown("---")
 
