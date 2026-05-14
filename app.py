@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # =====================================================
-# CUSTOM CSS
+# STYLE
 # =====================================================
 
 st.markdown("""
@@ -71,7 +71,7 @@ conn.commit()
 
 st.title("🌍 ZERO WASTE AI")
 st.subheader(
-    "Advanced Environmental Intelligence Platform"
+    "Advanced Multi-Satellite Environmental Intelligence System"
 )
 
 # =====================================================
@@ -110,78 +110,151 @@ uploaded_file = st.file_uploader(
 )
 
 # =====================================================
-# DATA
+# LOAD DATA
 # =====================================================
 
 if uploaded_file is not None:
 
-    df = pd.read_csv(uploaded_file)
+    try:
 
-    cursor.execute(
-        """
-        INSERT INTO uploads
-        (filename, upload_time)
-        VALUES (?, ?)
-        """,
-        (
-            uploaded_file.name,
-            str(datetime.now())
+        df = pd.read_csv(uploaded_file)
+
+        cursor.execute(
+            """
+            INSERT INTO uploads
+            (filename, upload_time)
+            VALUES (?, ?)
+            """,
+            (
+                uploaded_file.name,
+                str(datetime.now())
+            )
         )
-    )
 
-    conn.commit()
+        conn.commit()
 
-    st.success(
-        "Dataset Uploaded Successfully"
-    )
+        st.success("Dataset Uploaded Successfully")
+
+    except Exception as e:
+
+        st.error(f"CSV ERROR: {e}")
+
+        df = pd.DataFrame()
 
 else:
 
-    df = pd.DataFrame({
+    df = pd.DataFrame()
 
-        "site_id": range(1, 51),
+# =====================================================
+# DEFAULT COLUMNS FIX
+# =====================================================
 
-        "latitude": np.random.uniform(
-            18,
-            28,
-            50
-        ),
+required_columns = {
 
-        "longitude": np.random.uniform(
-            72,
-            88,
-            50
-        ),
+    "site_id": np.arange(1, 51),
 
-        "methane": np.random.uniform(
-            3900,
-            4200,
-            50
-        ),
+    "latitude": np.random.uniform(
+        18,
+        28,
+        50
+    ),
 
-        "co2e": np.random.uniform(
-            1000,
-            5000,
-            50
-        ),
+    "longitude": np.random.uniform(
+        72,
+        88,
+        50
+    ),
 
-        "confidence": np.random.uniform(
-            80,
-            99,
-            50
-        ),
+    "methane": np.random.uniform(
+        3900,
+        4200,
+        50
+    ),
 
-        "thermal_score": np.random.uniform(
-            20,
-            90,
-            50
-        ),
+    "co2e": np.random.uniform(
+        1000,
+        5000,
+        50
+    ),
 
-        "risk": np.random.choice(
-            ["LOW", "MEDIUM", "HIGH"],
-            50
-        )
-    })
+    "confidence": np.random.uniform(
+        80,
+        99,
+        50
+    ),
+
+    "thermal_score": np.random.uniform(
+        20,
+        90,
+        50
+    ),
+
+    "risk": np.random.choice(
+        ["LOW", "MEDIUM", "HIGH"],
+        50
+    )
+}
+
+# if dataframe empty
+if df.empty:
+
+    df = pd.DataFrame(required_columns)
+
+# add missing columns automatically
+for col, default_values in required_columns.items():
+
+    if col not in df.columns:
+
+        if len(df) > 0:
+
+            if isinstance(default_values, np.ndarray):
+
+                df[col] = np.random.choice(
+                    default_values,
+                    len(df)
+                )
+
+            else:
+
+                df[col] = default_values
+
+        else:
+
+            df[col] = default_values
+
+# =====================================================
+# CLEAN DATA
+# =====================================================
+
+df["methane"] = pd.to_numeric(
+    df["methane"],
+    errors="coerce"
+).fillna(0)
+
+df["co2e"] = pd.to_numeric(
+    df["co2e"],
+    errors="coerce"
+).fillna(0)
+
+df["confidence"] = pd.to_numeric(
+    df["confidence"],
+    errors="coerce"
+).fillna(0)
+
+df["thermal_score"] = pd.to_numeric(
+    df["thermal_score"],
+    errors="coerce"
+).fillna(0)
+
+df["latitude"] = pd.to_numeric(
+    df["latitude"],
+    errors="coerce"
+).fillna(20)
+
+df["longitude"] = pd.to_numeric(
+    df["longitude"],
+    errors="coerce"
+).fillna(78)
 
 # =====================================================
 # LIVE METRICS
@@ -240,7 +313,7 @@ with col4:
 st.markdown("## 🔎 SEARCH ENGINE")
 
 search = st.text_input(
-    "Search Site / Risk / Value"
+    "Search Any Site / Risk / Value"
 )
 
 if search:
@@ -276,27 +349,39 @@ else:
 st.markdown("## 🛰️ LIVE MAP VIEW")
 
 map_df = pd.DataFrame({
+
     "lat": df["latitude"],
+
     "lon": df["longitude"]
+
 })
 
 st.map(map_df)
 
 # =====================================================
-# HEATMAP CHART
+# HEATMAP
 # =====================================================
 
 st.markdown("## 🌡️ METHANE HEATMAP")
 
 fig = px.scatter_mapbox(
+
     df,
+
     lat="latitude",
+
     lon="longitude",
+
     color="methane",
+
     size="methane",
+
     hover_name="site_id",
+
     zoom=3,
+
     height=500
+
 )
 
 fig.update_layout(
@@ -309,7 +394,7 @@ st.plotly_chart(
 )
 
 # =====================================================
-# CARBON BASELINE ENGINE
+# CARBON BASELINE
 # =====================================================
 
 st.markdown("## 🌱 CARBON BASELINE ENGINE")
@@ -364,7 +449,7 @@ st.error(
 )
 
 # =====================================================
-# FIRE RISK ENGINE
+# FIRE RISK
 # =====================================================
 
 st.markdown("## 🔥 FIRE RISK ENGINE")
@@ -379,7 +464,7 @@ st.metric(
 )
 
 # =====================================================
-# ESG ENGINE
+# ESG
 # =====================================================
 
 st.markdown("## 📑 ESG COMPLIANCE ENGINE")
@@ -397,7 +482,7 @@ else:
     )
 
 # =====================================================
-# SDG TRACKING
+# SDG
 # =====================================================
 
 st.markdown("## 🌎 SDG TRACKING")
@@ -414,7 +499,7 @@ with s3:
     st.success("SDG 13 ACTIVE")
 
 # =====================================================
-# AI CLUSTER ENGINE
+# AI CLUSTER
 # =====================================================
 
 st.markdown("## 🧠 AI CLUSTER DETECTION")
@@ -441,7 +526,7 @@ st.dataframe(
 )
 
 # =====================================================
-# SATELLITE EVIDENCE
+# EVIDENCE
 # =====================================================
 
 st.markdown("## 📦 SATELLITE EVIDENCE ARCHIVE")
@@ -468,7 +553,7 @@ st.dataframe(
 )
 
 # =====================================================
-# HISTORICAL SCANS
+# HISTORY
 # =====================================================
 
 st.markdown("## 🕒 HISTORICAL SCANS")
@@ -511,7 +596,7 @@ st.dataframe(
 )
 
 # =====================================================
-# SENTINEL STATUS
+# SATELLITE STATUS
 # =====================================================
 
 st.markdown("## 🛰️ SATELLITE NETWORK STATUS")
