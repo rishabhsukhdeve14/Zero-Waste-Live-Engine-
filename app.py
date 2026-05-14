@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
+import sqlite3
+from datetime import datetime
 
 # ---------------- PAGE CONFIG ---------------- #
 
@@ -14,7 +15,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-html, body, [class*="css"]  {
+html, body, [class*="css"] {
     background-color: #020617;
     color: white;
 }
@@ -33,67 +34,109 @@ h1,h2,h3 {
 .block-container {
     padding-top: 1rem;
 }
-
-[data-testid="stDataFrame"] {
-    background-color: #07122b;
-}
 </style>
 """, unsafe_allow_html=True)
+
+# ---------------- DATABASE ---------------- #
+
+conn = sqlite3.connect("zero_waste_ai.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS uploads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT,
+    upload_time TEXT
+)
+""")
+
+conn.commit()
 
 # ---------------- HEADER ---------------- #
 
 st.title("🌍 ZERO WASTE AI")
 st.subheader("Real-Time Multi-Satellite Environmental Intelligence System")
 
-# ---------------- SAFE DATAFRAME ---------------- #
+# ---------------- FILE UPLOAD ---------------- #
 
-df = pd.DataFrame({
-    "site_id": range(1, 21),
-    "baseline_methane": np.random.uniform(3900, 4100, 20),
-    "current_methane": np.random.uniform(3950, 4200, 20),
-    "co2e": np.random.uniform(1000, 5000, 20),
-    "confidence": np.random.uniform(80, 99, 20),
-    "risk": np.random.choice(
-        ["LOW", "MEDIUM", "HIGH"],
-        20
+st.markdown("## 📂 DATASET UPLOAD ENGINE")
+
+uploaded_file = st.file_uploader(
+    "Upload CSV Dataset",
+    type=["csv"]
+)
+
+if uploaded_file is not None:
+
+    df = pd.read_csv(uploaded_file)
+
+    cursor.execute(
+        "INSERT INTO uploads(filename, upload_time) VALUES (?, ?)",
+        (
+            uploaded_file.name,
+            str(datetime.now())
+        )
     )
-})
 
-# ---------------- METRICS ---------------- #
+    conn.commit()
 
-baseline = df["baseline_methane"].mean()
-current = df["current_methane"].mean()
-co2 = df["co2e"].sum()
-confidence = df["confidence"].mean()
+    st.success("Dataset Uploaded Successfully")
 
-reduction = ((baseline - current) / baseline) * 100
+else:
+
+    df = pd.DataFrame({
+        "site_id": range(1, 21),
+        "methane": np.random.uniform(3900, 4200, 20),
+        "co2e": np.random.uniform(1000, 5000, 20),
+        "confidence": np.random.uniform(80, 99, 20),
+        "risk": np.random.choice(
+            ["LOW", "MEDIUM", "HIGH"],
+            20
+        )
+    })
 
 # ---------------- LIVE METRICS ---------------- #
 
 st.markdown("## 📡 LIVE INTELLIGENCE METRICS")
 
+total_sites = len(df)
+
+critical_sites = len(
+    df[df["risk"] == "HIGH"]
+) if "risk" in df.columns else 0
+
+carbon_credit = (
+    df["co2e"].sum() * 15
+) if "co2e" in df.columns else 0
+
+avg_confidence = (
+    df["confidence"].mean()
+) if "confidence" in df.columns else 0
+
 col1, col2 = st.columns(2)
 
 with col1:
+
     st.metric(
         "Total Sites",
-        len(df)
+        total_sites
     )
 
     st.metric(
         "Critical Sites",
-        len(df[df["risk"] == "HIGH"])
+        critical_sites
     )
 
 with col2:
+
     st.metric(
         "Carbon Credit USD",
-        f"${co2*15:,.2f}"
+        f"${carbon_credit:,.2f}"
     )
 
     st.metric(
         "Average Confidence",
-        f"{confidence:.2f}%"
+        f"{avg_confidence:.2f}%"
     )
 
 # ---------------- SEARCH ---------------- #
@@ -101,17 +144,26 @@ with col2:
 st.markdown("## 🔎 SEARCH INTELLIGENCE")
 
 search = st.text_input(
-    "Search Any Site / Risk"
+    "Search Site / Risk"
 )
 
 if search:
+
     filtered = df[
         df.astype(str)
-        .apply(lambda x: x.str.contains(search, case=False))
+        .apply(
+            lambda x: x.str.contains(
+                search,
+                case=False
+            )
+        )
         .any(axis=1)
     ]
+
     st.dataframe(filtered)
+
 else:
+
     st.dataframe(df)
 
 # ---------------- MAP ---------------- #
@@ -139,44 +191,50 @@ st.map(map_df)
 
 st.markdown("## 🌱 CARBON BASELINE ENGINE")
 
-c1, c2, c3 = st.columns(3)
+if "methane" in df.columns:
 
-with c1:
-    st.metric(
-        "Baseline Methane",
-        f"{baseline:.2f}"
-    )
+    baseline = df["methane"].mean()
 
-with c2:
-    st.metric(
-        "Current Methane",
-        f"{current:.2f}"
-    )
+    current = baseline + np.random.uniform(-50, 50)
 
-with c3:
-    st.metric(
-        "Reduction %",
-        f"{reduction:.2f}%"
-    )
+    reduction = (
+        (baseline - current)
+        / baseline
+    ) * 100
 
-# ---------------- CO2 ENGINE ---------------- #
+    c1, c2, c3 = st.columns(3)
 
-st.markdown("## ☁️ CO2e EMISSION ENGINE")
+    with c1:
+        st.metric(
+            "Baseline Methane",
+            f"{baseline:.2f}"
+        )
 
-st.metric(
-    "Total CO2e Tons",
-    f"{co2:.2f}"
-)
+    with c2:
+        st.metric(
+            "Current Methane",
+            f"{current:.2f}"
+        )
 
-# ---------------- METHANE ALERTS ---------------- #
+    with c3:
+        st.metric(
+            "Reduction %",
+            f"{reduction:.2f}%"
+        )
+
+# ---------------- METHANE ALERT ---------------- #
 
 st.markdown("## 🚨 METHANE LEAK DETECTION")
 
-high_risk = len(df[df["current_methane"] > 4150])
+if "methane" in df.columns:
 
-st.error(
-    f"{high_risk} HIGH PROBABILITY LEAK ZONES DETECTED"
-)
+    high_risk = len(
+        df[df["methane"] > 4100]
+    )
+
+    st.error(
+        f"{high_risk} HIGH PROBABILITY LEAK ZONES DETECTED"
+    )
 
 # ---------------- FIRE RISK ---------------- #
 
@@ -193,13 +251,16 @@ st.metric(
 
 st.markdown("## 📑 ESG COMPLIANCE ENGINE")
 
-if confidence > 85:
+if avg_confidence > 85:
+
     st.success(
-        f"ESG COMPLIANCE STRONG ({confidence:.1f})"
+        f"ESG COMPLIANCE STRONG ({avg_confidence:.1f})"
     )
+
 else:
+
     st.warning(
-        f"ESG COMPLIANCE MODERATE ({confidence:.1f})"
+        f"ESG COMPLIANCE MODERATE ({avg_confidence:.1f})"
     )
 
 # ---------------- SDG ---------------- #
@@ -217,7 +278,7 @@ with sdg2:
 with sdg3:
     st.success("SDG 13 ACTIVE")
 
-# ---------------- AI DETECTION ---------------- #
+# ---------------- AI CLUSTER ---------------- #
 
 st.markdown("## 🧠 AI CLUSTER DETECTION")
 
@@ -272,8 +333,19 @@ history_df = pd.DataFrame({
 
 st.dataframe(history_df)
 
+# ---------------- DATABASE RECORDS ---------------- #
+
+st.markdown("## 🗂️ STORED UPLOAD RECORDS")
+
+upload_records = pd.read_sql_query(
+    "SELECT * FROM uploads",
+    conn
+)
+
+st.dataframe(upload_records)
+
 # ---------------- FOOTER ---------------- #
 
 st.info(
-    "ZERO WASTE AI • Stable Render Deployment Active"
+    "ZERO WASTE AI • Stable Deployment Active"
 )
