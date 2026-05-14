@@ -9,8 +9,16 @@ import plotly.express as px
 from datetime import datetime
 import random
 import time
+import pandas as pd
+import numpy as np
 
-# ==========================================
+df = pd.DataFrame({
+    "baseline_methane": np.random.uniform(3900, 4100, 20),
+    "current_methane": np.random.uniform(3900, 4200, 20),
+    "co2e": np.random.uniform(1000, 5000, 20)
+})
+#
+if "baseline_methane" not in df.columns: ==========================================
 # PAGE CONFIG
 # ==========================================
 
