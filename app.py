@@ -1,24 +1,34 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import folium
-from streamlit_folium import st_folium
-from folium.plugins import HeatMap
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
-import os
+import pandas as pd
 from datetime import datetime
+import random
 
 # ==========================================
-# PAGE CONFIG
+# FASTAPI APP
 # ==========================================
 
-st.set_page_config(
-    page_title="ZERO WASTE AI",
-    layout="wide"
+app = FastAPI(
+    title="ZERO WASTE AI API",
+    description="Environmental Intelligence API",
+    version="1.0"
 )
 
 # ==========================================
-# DATABASE SETUP
+# CORS
+# ==========================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ==========================================
+# SQLITE DATABASE
 # ==========================================
 
 conn = sqlite3.connect(
@@ -28,560 +38,389 @@ conn = sqlite3.connect(
 
 cursor = conn.cursor()
 
+# ==========================================
+# CREATE TABLES
+# ==========================================
+
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS scan_history (
+CREATE TABLE IF NOT EXISTS api_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT,
-    scan_time TEXT,
-    total_rows INTEGER,
-    suspicious_rows INTEGER,
-    invalid_coordinates INTEGER,
-    missing_rows INTEGER
+    endpoint TEXT,
+    request_time TEXT
 )
 """)
 
 conn.commit()
 
 # ==========================================
-# UPLOADS FOLDER
+# ROOT API
 # ==========================================
 
-os.makedirs("uploads", exist_ok=True)
+@app.get("/")
 
-# ==========================================
-# SIDEBAR
-# ==========================================
+def root():
 
-st.sidebar.title("ZERO WASTE AI")
-
-st.sidebar.success("SYSTEM ONLINE")
-
-city = st.sidebar.selectbox(
-    "Monitor City",
-    [
-        "Delhi",
-        "Mumbai",
-        "Bangalore",
-        "Chennai"
-    ]
-)
-
-sensitivity = st.sidebar.slider(
-    "AI Scan Sensitivity",
-    0,
-    100,
-    100
-)
-
-mode = st.sidebar.selectbox(
-    "Detection Mode",
-    [
-        "Waste Monitoring",
-        "Methane Detection",
-        "Thermal Intelligence"
-    ]
-)
-
-# ==========================================
-# TITLE
-# ==========================================
-
-st.title("🌍 ZERO WASTE AI")
-
-st.subheader(
-    "Real-Time Multi-Satellite Environmental Intelligence"
-)
-
-# ==========================================
-# METRICS
-# ==========================================
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric(
-    "Cities Scanned",
-    "24"
-)
-
-col2.metric(
-    "India Methane",
-    "1922.53"
-)
-
-col3.metric(
-    "AI Accuracy",
-    "96%"
-)
-
-st.divider()
-
-# ==========================================
-# SATELLITE ENGINE
-# ==========================================
-
-st.header("🛰 MULTI SATELLITE INTELLIGENCE")
-
-st.success("Multi-Satellite Engine Online")
-
-m1, m2, m3, m4 = st.columns(4)
-
-m1.metric(
-    "Sentinel-5P",
-    "1922.53"
-)
-
-m2.metric(
-    "Sentinel-2",
-    "Surface"
-)
-
-m3.metric(
-    "Landsat-8",
-    "Thermal"
-)
-
-m4.metric(
-    "MODIS",
-    "Fire Alerts"
-)
-
-st.divider()
-
-# ==========================================
-# UPLOAD SECTION
-# ==========================================
-
-st.header("📂 Upload Intelligence CSV")
-
-uploaded_file = st.file_uploader(
-    "Upload Large Intelligence CSV File",
-    type=["csv"]
-)
-
-# ==========================================
-# FILE PROCESSING
-# ==========================================
-
-if uploaded_file is not None:
-
-    # ======================================
-    # SAVE FILE
-    # ======================================
-
-    file_path = os.path.join(
-        "uploads",
-        uploaded_file.name
+    cursor.execute("""
+    INSERT INTO api_logs (
+        endpoint,
+        request_time
     )
+    VALUES (?, ?)
+    """, (
+        "/",
+        str(datetime.now())
+    ))
 
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
+    conn.commit()
 
-    st.success(
-        f"Uploaded Successfully: {uploaded_file.name}"
+    return {
+
+        "platform": "ZERO WASTE AI",
+
+        "status": "ACTIVE",
+
+        "message": "Environmental Intelligence API Running",
+
+        "version": "1.0"
+    }
+
+# ==========================================
+# HEALTH CHECK
+# ==========================================
+
+@app.get("/health")
+
+def health():
+
+    return {
+
+        "server": "ONLINE",
+
+        "database": "CONNECTED",
+
+        "api_status": "HEALTHY",
+
+        "timestamp": str(datetime.now())
+    }
+
+# ==========================================
+# SCAN HISTORY API
+# ==========================================
+
+@app.get("/api/v1/scan-history")
+
+def scan_history():
+
+    cursor.execute("""
+    INSERT INTO api_logs (
+        endpoint,
+        request_time
     )
+    VALUES (?, ?)
+    """, (
+        "/api/v1/scan-history",
+        str(datetime.now())
+    ))
 
-    # ======================================
-    # LOAD CSV
-    # ======================================
+    conn.commit()
 
     try:
 
-        df = pd.read_csv(
-            uploaded_file,
-            nrows=5000
+        df = pd.read_sql_query(
+            """
+            SELECT * FROM scan_history
+            ORDER BY id DESC
+            """,
+            conn
         )
+
+        return {
+
+            "status": "SUCCESS",
+
+            "records": len(df),
+
+            "data": df.to_dict(
+                orient="records"
+            )
+        }
 
     except Exception as e:
 
-        st.error(
-            f"CSV Loading Error: {e}"
-        )
+        return {
 
-        st.stop()
+            "status": "ERROR",
+
+            "message": str(e)
+        }
+
+# ==========================================
+# SITE VALUATION API
+# ==========================================
+
+@app.get("/api/v1/site-valuation")
+
+def site_valuation(
+    lat: float,
+    lon: float
+):
+
+    cursor.execute("""
+    INSERT INTO api_logs (
+        endpoint,
+        request_time
+    )
+    VALUES (?, ?)
+    """, (
+        "/api/v1/site-valuation",
+        str(datetime.now())
+    ))
+
+    conn.commit()
 
     # ======================================
-    # SHOW COLUMNS
+    # MOCK AI ENGINE
     # ======================================
 
-    st.subheader("📜 Detected Columns")
-
-    st.write(df.columns.tolist())
-
-    # ======================================
-    # SEARCH ENGINE
-    # ======================================
-
-    st.subheader("🔎 Search Intelligence")
-
-    search_value = st.text_input(
-        "Search Any Value"
+    methane_flux = random.randint(
+        1200,
+        6500
     )
 
-    if search_value:
+    thermal_score = random.randint(
+        20,
+        95
+    )
 
-        filtered_df = df[
-            df.astype(str)
-            .apply(
-                lambda row:
-                row.str.contains(
-                    search_value,
-                    case=False
-                ).any(),
-                axis=1
-            )
-        ]
+    confidence = random.randint(
+        75,
+        99
+    )
 
-        st.dataframe(filtered_df)
+    wealth = round(
+        random.uniform(2, 50),
+        2
+    )
 
-    # ======================================
-    # LIVE TABLE
-    # ======================================
-
-    st.subheader("📄 Live Intelligence Table")
-
-    st.dataframe(df.head(100))
+    carbon_credit = round(
+        random.uniform(10000, 250000),
+        2
+    )
 
     # ======================================
-    # AUTO COORDINATE DETECTION
+    # RISK STATUS
     # ======================================
 
-    lat_col = None
-    lon_col = None
+    if methane_flux > 5000:
 
-    for col in df.columns:
+        site_status = "CRITICAL"
 
-        col_lower = col.lower()
+        blast_risk = "HIGH"
 
-        if col_lower in [
-            "latitude",
-            "lat"
-        ]:
-            lat_col = col
+        estimated_blast_timeline = "14 DAYS"
 
-        if col_lower in [
-            "longitude",
-            "lon",
-            "lng"
-        ]:
-            lon_col = col
+    elif methane_flux > 3000:
 
-    # ======================================
-    # MAP ENGINE
-    # ======================================
+        site_status = "WARNING"
 
-    if lat_col and lon_col:
+        blast_risk = "MEDIUM"
 
-        st.subheader(
-            "🗺 Live Landfill Intelligence Map"
-        )
-
-        map_df = df[
-            [lat_col, lon_col]
-        ].dropna()
-
-        map_df.columns = [
-            "lat",
-            "lon"
-        ]
-
-        m = folium.Map(
-            location=[
-                map_df["lat"].mean(),
-                map_df["lon"].mean()
-            ],
-            zoom_start=5,
-            tiles="CartoDB dark_matter"
-        )
-
-        for _, row in map_df.iterrows():
-
-            folium.CircleMarker(
-                location=[
-                    row["lat"],
-                    row["lon"]
-                ],
-                radius=3,
-                color="lime",
-                fill=True,
-                fill_opacity=0.8
-            ).add_to(m)
-
-        st_folium(
-            m,
-            width=1200,
-            height=700
-        )
+        estimated_blast_timeline = "45 DAYS"
 
     else:
 
-        st.warning(
-            "Latitude / Longitude Columns Not Found"
-        )
+        site_status = "SAFE"
 
-    st.divider()
+        blast_risk = "LOW"
+
+        estimated_blast_timeline = "NO IMMEDIATE RISK"
 
     # ======================================
-    # AI VERIFICATION ENGINE
+    # RESPONSE
     # ======================================
 
-    st.header("🧠 AI DATA VERIFICATION ENGINE")
+    return {
 
-    if st.button("VERIFY DATASET"):
+        "platform": "ZERO WASTE AI",
 
-        suspicious_count = 0
-        invalid_coord_count = 0
-        missing_rows = 0
+        "timestamp": str(datetime.now()),
 
-        verification_results = []
+        "latitude": lat,
 
-        # ==================================
-        # AUTO METHANE COLUMN DETECTION
-        # ==================================
+        "longitude": lon,
 
-        methane_col = None
+        "site_status": site_status,
 
-        for c in df.columns:
+        "methane_flux_intensity": methane_flux,
 
-            c_lower = c.lower()
+        "thermal_risk_score": thermal_score,
 
-            if (
-                "methane" in c_lower
-                or "ch4" in c_lower
-            ):
+        "satellite_confidence_percent": confidence,
 
-                methane_col = c
-                break
+        "blast_risk_status": blast_risk,
 
-        # ==================================
-        # VERIFICATION LOOP
-        # ==================================
+        "estimated_blast_timeline": estimated_blast_timeline,
 
-        for idx, row in df.iterrows():
+        "wealth_inr_cr": wealth,
 
-            issues = []
+        "carbon_credit_value_usd": carbon_credit,
 
-            # ==============================
-            # MISSING VALUES
-            # ==============================
+        "environmental_priority": random.choice([
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+        ])
+    }
 
-            if row.isnull().sum() > 0:
+# ==========================================
+# LIVE HOTSPOTS API
+# ==========================================
 
-                missing_rows += 1
+@app.get("/api/v1/live-hotspots")
 
-                issues.append(
-                    "Missing Data"
-                )
+def live_hotspots():
 
-            # ==============================
-            # COORDINATE VALIDATION
-            # ==============================
+    cursor.execute("""
+    INSERT INTO api_logs (
+        endpoint,
+        request_time
+    )
+    VALUES (?, ?)
+    """, (
+        "/api/v1/live-hotspots",
+        str(datetime.now())
+    ))
 
-            if lat_col and lon_col:
+    conn.commit()
 
-                try:
+    hotspots = []
 
-                    lat = float(
-                        row[lat_col]
-                    )
+    cities = [
+        "Delhi",
+        "Mumbai",
+        "Chennai",
+        "Bangalore",
+        "Hyderabad"
+    ]
 
-                    lon = float(
-                        row[lon_col]
-                    )
+    for city in cities:
 
-                    if lat < -90 or lat > 90:
+        hotspots.append({
 
-                        invalid_coord_count += 1
+            "city": city,
 
-                        issues.append(
-                            "Invalid Latitude"
-                        )
+            "methane_flux": random.randint(
+                1500,
+                6000
+            ),
 
-                    if lon < -180 or lon > 180:
+            "risk": random.choice([
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+            ]),
 
-                        invalid_coord_count += 1
+            "satellite_confidence": random.randint(
+                80,
+                99
+            )
+        })
 
-                        issues.append(
-                            "Invalid Longitude"
-                        )
+    return {
 
-                except:
+        "status": "ACTIVE",
 
-                    invalid_coord_count += 1
+        "hotspots_detected": len(hotspots),
 
-                    issues.append(
-                        "Coordinate Parse Error"
-                    )
+        "data": hotspots
+    }
 
-            # ==============================
-            # METHANE VALIDATION
-            # ==============================
+# ==========================================
+# CARBON CREDIT API
+# ==========================================
 
-            if methane_col:
+@app.get("/api/v1/carbon-credit")
 
-                try:
+def carbon_credit():
 
-                    methane_value = float(
-                        row[methane_col]
-                    )
+    total_co2 = round(
+        random.uniform(1000, 90000),
+        2
+    )
 
-                    if methane_value > 3000:
+    total_value = round(
+        total_co2 * 12,
+        2
+    )
 
-                        suspicious_count += 1
+    return {
 
-                        issues.append(
-                            "High Methane"
-                        )
+        "co2_prevented_tons_year": total_co2,
 
-                except:
+        "carbon_credit_value_usd": total_value,
 
-                    issues.append(
-                        "Methane Parse Error"
-                    )
+        "market_status": "ACTIVE"
+    }
 
-            # ==============================
-            # STATUS
-            # ==============================
+# ==========================================
+# RISK ALERT API
+# ==========================================
 
-            status = "VERIFIED"
+@app.get("/api/v1/risk-alerts")
 
-            if len(issues) > 0:
+def risk_alerts():
 
-                status = "SUSPICIOUS"
+    alerts = []
 
-            verification_results.append({
+    for i in range(5):
 
-                "row": idx,
+        alerts.append({
 
-                "status": status,
+            "site_id": f"SITE-{100+i}",
 
-                "issues": ", ".join(issues)
+            "risk_level": random.choice([
+                "WARNING",
+                "CRITICAL"
+            ]),
 
-            })
+            "methane_flux": random.randint(
+                3000,
+                7000
+            ),
 
-        # ==================================
-        # RESULTS DATAFRAME
-        # ==================================
+            "alert_time": str(datetime.now())
+        })
 
-        results_df = pd.DataFrame(
-            verification_results
-        )
+    return {
 
-        # ==================================
-        # SAVE TO SQLITE DATABASE
-        # ==================================
+        "active_alerts": len(alerts),
 
-        cursor.execute("""
-        INSERT INTO scan_history (
-            filename,
-            scan_time,
-            total_rows,
-            suspicious_rows,
-            invalid_coordinates,
-            missing_rows
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (
+        "data": alerts
+    }
 
-            uploaded_file.name,
+# ==========================================
+# API LOGS
+# ==========================================
 
-            str(datetime.now()),
+@app.get("/api/v1/api-logs")
 
-            len(df),
+def api_logs():
 
-            suspicious_count,
-
-            invalid_coord_count,
-
-            missing_rows
-
-        ))
-
-        conn.commit()
-
-        # ==================================
-        # SHOW RESULTS
-        # ==================================
-
-        st.success(
-            "DATASET VERIFICATION COMPLETE"
-        )
-
-        c1, c2, c3, c4 = st.columns(4)
-
-        c1.metric(
-            "Verified Rows",
-            len(df)
-        )
-
-        c2.metric(
-            "Suspicious Rows",
-            suspicious_count
-        )
-
-        c3.metric(
-            "Invalid Coordinates",
-            invalid_coord_count
-        )
-
-        c4.metric(
-            "Rows With Missing Data",
-            missing_rows
-        )
-
-        st.divider()
-
-        st.subheader(
-            "📡 Verification Results"
-        )
-
-        st.dataframe(
-            results_df.head(100)
-        )
-
-        st.success(
-            "AI Verification Engine Finished"
-        )
-
-    st.divider()
-
-    # ======================================
-    # DATABASE HISTORY
-    # ======================================
-
-    st.header("🗄 Scan History Database")
-
-    history = pd.read_sql_query(
+    df = pd.read_sql_query(
         """
-        SELECT * FROM scan_history
+        SELECT * FROM api_logs
         ORDER BY id DESC
         """,
         conn
     )
 
-    st.dataframe(history)
+    return {
 
-    st.divider()
+        "total_logs": len(df),
 
-    # ======================================
-    # AI RISK ENGINE
-    # ======================================
-
-    st.header("🚨 AI RISK ENGINE")
-
-    st.error(
-        "Environmental anomalies detected"
-    )
-
-    st.success(
-        "Real-Time Intelligence Running"
-    )
-
-# ==========================================
-# FOOTER
-# ==========================================
-
-st.divider()
-
-st.caption(
-    "ZERO WASTE AI • Real-Time Multi-Satellite Intelligence"
-)
+        "logs": df.to_dict(
+            orient="records"
+        )
+    }
