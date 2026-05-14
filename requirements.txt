@@ -19,3 +19,7 @@ folium
 streamlit-autorefresh
 opencv-python-headless
 sqlalchemy
+fastapi
+uvicorn
+psycopg2-binary
+python-dotenv
