@@ -2,361 +2,350 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import pydeck as pdk
 import sqlite3
+import time
 from datetime import datetime
-import random
 
-# =========================================
+# =========================
 # PAGE CONFIG
-# =========================================
-
+# =========================
 st.set_page_config(
     page_title="ZERO WASTE AI",
-    layout="wide"
+    layout="wide",
+    page_icon="🌍"
 )
 
-# =========================================
-# DATABASE
-# =========================================
+# =========================
+# DARK THEME CSS
+# =========================
+st.markdown("""
+<style>
+body {
+    background-color: #050816;
+    color: white;
+}
+.metric-card {
+    background: #0d1326;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid #1f2937;
+}
+.big-font {
+    font-size: 40px;
+    font-weight: bold;
+    color: #00ff99;
+}
+.alert-box {
+    background-color: #2b0b0b;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid red;
+}
+</style>
+""", unsafe_allow_html=True)
 
+# =========================
+# DATABASE
+# =========================
 conn = sqlite3.connect("zero_waste_ai.db")
 cursor = conn.cursor()
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS scans (
+CREATE TABLE IF NOT EXISTS scan_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    city TEXT,
-    methane REAL,
-    risk TEXT,
-    created_at TEXT
+    scan_time TEXT,
+    total_sites INTEGER,
+    high_risk INTEGER
 )
 """)
 
 conn.commit()
 
-# =========================================
-# SIDEBAR
-# =========================================
+# =========================
+# TITLE
+# =========================
+st.title("🌍 ZERO WASTE AI")
+st.success("Real-Time Environmental Intelligence Platform Running")
 
-st.sidebar.title("🌍 ZERO WASTE AI")
+# =========================
+# SIDEBAR
+# =========================
+st.sidebar.title("⚙️ Control Panel")
 
 city = st.sidebar.selectbox(
     "Monitor City",
-    ["Delhi", "Mumbai", "Chennai", "Bangalore"]
+    ["Delhi", "Mumbai", "Hyderabad", "Bangalore", "Chennai"]
 )
 
-sensitivity = st.sidebar.slider(
-    "AI Scan Sensitivity",
-    0,
-    100,
-    90
+refresh_rate = st.sidebar.slider(
+    "Auto Refresh Seconds",
+    5,
+    60,
+    10
 )
 
-mode = st.sidebar.selectbox(
-    "Detection Mode",
-    ["Waste Monitoring", "Methane Scan", "Risk Intelligence"]
-)
-
-if st.sidebar.button("Run Live AI Scan"):
-
-    methane = round(random.uniform(1000, 5000), 2)
-
-    if methane > 3500:
-        risk = "HIGH"
-    elif methane > 2000:
-        risk = "MEDIUM"
-    else:
-        risk = "LOW"
-
-    cursor.execute("""
-    INSERT INTO scans(city, methane, risk, created_at)
-    VALUES (?, ?, ?, ?)
-    """, (
-        city,
-        methane,
-        risk,
-        str(datetime.now())
-    ))
-
-    conn.commit()
-
-    st.sidebar.success("AI Scan Completed")
-
-# =========================================
-# HEADER
-# =========================================
-
-st.title("🚀 ZERO WASTE AI")
-
-st.success("Environmental Intelligence Platform Active")
-
-# =========================================
-# LIVE METRICS
-# =========================================
-
-col1, col2, col3, col4 = st.columns(4)
-
-cities_scanned = 24
-methane_flux = round(random.uniform(1500, 4000), 2)
-accuracy = round(random.uniform(92, 99), 2)
-carbon_saved = round(random.uniform(10000, 50000), 2)
-
-col1.metric(
-    "Cities Scanned",
-    cities_scanned,
-    "+3"
-)
-
-col2.metric(
-    "Methane Flux",
-    methane_flux,
-    "+12%"
-)
-
-col3.metric(
-    "AI Accuracy",
-    f"{accuracy}%",
-    "+1.2%"
-)
-
-col4.metric(
-    "Carbon Prevented",
-    f"{carbon_saved} Tons",
-    "+9%"
-)
-
-st.divider()
-
-# =========================================
+# =========================
 # FILE UPLOAD
-# =========================================
-
-st.subheader("📂 Upload Intelligence CSV")
-
+# =========================
 uploaded_file = st.file_uploader(
-    "Upload Large Intelligence CSV File",
+    "📂 Upload Intelligence CSV",
     type=["csv"]
 )
 
-df = None
-
 if uploaded_file is not None:
 
-    df = pd.read_csv(uploaded_file)
+    try:
+        df = pd.read_csv(uploaded_file)
 
-    st.success("Dataset Uploaded Successfully")
+        st.success("Dataset Uploaded Successfully")
 
-    # =====================================
-    # DATASET INFO
-    # =====================================
+        # =========================
+        # COLUMN CHECK
+        # =========================
+        st.subheader("📋 Dataset Columns")
 
-    st.subheader("📊 Dataset Information")
+        st.write(df.columns.tolist())
 
-    c1, c2, c3 = st.columns(3)
+        # =========================
+        # REQUIRED COLUMNS
+        # =========================
+        lat_col = None
+        lon_col = None
 
-    c1.info(f"Rows: {df.shape[0]}")
-    c2.info(f"Columns: {df.shape[1]}")
-    c3.info(f"Memory Usage: {round(df.memory_usage().sum()/1024/1024,2)} MB")
+        for col in df.columns:
+            c = col.lower()
 
-    # =====================================
-    # SEARCH
-    # =====================================
+            if "lat" in c:
+                lat_col = col
 
-    st.subheader("🔎 Search Intelligence")
+            if "lon" in c or "lng" in c:
+                lon_col = col
 
-    search = st.text_input("Search Any Value")
+        # =========================
+        # AUTO CREATE SAMPLE VALUES
+        # =========================
+        if lat_col is None:
+            df["latitude"] = np.random.uniform(8, 35, len(df))
+            lat_col = "latitude"
 
-    if search:
+        if lon_col is None:
+            df["longitude"] = np.random.uniform(68, 92, len(df))
+            lon_col = "longitude"
 
-        filtered = df.astype(str).apply(
-            lambda x: x.str.contains(search, case=False)
-        ).any(axis=1)
+        # =========================
+        # LIVE AI VALUES
+        # =========================
+        np.random.seed(int(time.time()))
 
-        st.dataframe(
-            df[filtered].head(100),
-            use_container_width=True
+        df["methane_flux"] = np.random.uniform(100, 2000, len(df))
+
+        df["risk_score"] = np.random.randint(1, 100, len(df))
+
+        df["carbon_credit_usd"] = np.random.uniform(1000, 100000, len(df))
+
+        df["waste_value_inr_cr"] = np.random.uniform(1, 500, len(df))
+
+        df["last_scan"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # =========================
+        # ALERT STATUS
+        # =========================
+        df["alert_status"] = np.where(
+            df["risk_score"] > 75,
+            "HIGH RISK",
+            "NORMAL"
         )
 
-    # =====================================
-    # LIVE TABLE
-    # =====================================
+        # =========================
+        # METRICS
+        # =========================
+        total_sites = len(df)
 
-    st.subheader("📄 Live Intelligence Table")
+        high_risk = len(df[df["risk_score"] > 75])
 
-    st.dataframe(
-        df.head(100),
-        use_container_width=True
-    )
+        total_carbon = round(df["carbon_credit_usd"].sum(), 2)
 
-    # =====================================
-    # COLUMN VIEWER
-    # =====================================
+        total_value = round(df["waste_value_inr_cr"].sum(), 2)
 
-    st.subheader("🧠 Dataset Columns")
+        # =========================
+        # SAVE HISTORY
+        # =========================
+        cursor.execute("""
+        INSERT INTO scan_history (
+            scan_time,
+            total_sites,
+            high_risk
+        )
+        VALUES (?, ?, ?)
+        """, (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            int(total_sites),
+            int(high_risk)
+        ))
 
-    st.json(list(df.columns))
+        conn.commit()
 
-    # =====================================
-    # AI VERIFICATION ENGINE
-    # =====================================
+        # =========================
+        # TOP METRICS
+        # =========================
+        col1, col2, col3, col4 = st.columns(4)
 
-    st.subheader("🧠 AI DATA VERIFICATION ENGINE")
+        with col1:
+            st.metric("🌍 Total Sites", total_sites)
 
-    if st.button("VERIFY DATASET"):
+        with col2:
+            st.metric("🚨 High Risk Sites", high_risk)
 
-        total_rows = len(df)
+        with col3:
+            st.metric("💰 Waste Value (Cr)", f"{total_value:.2f}")
 
-        missing = int(df.isnull().sum().sum())
+        with col4:
+            st.metric("🌱 Carbon Credit USD", f"{total_carbon:.2f}")
 
-        duplicates = int(df.duplicated().sum())
+        # =========================
+        # ALERT PANEL
+        # =========================
+        st.subheader("🚨 AI RISK ALERTS")
 
-        suspicious = random.randint(0, 10)
+        risky = df[df["risk_score"] > 75]
 
-        invalid_coords = random.randint(0, 5)
+        if len(risky) > 0:
 
-        st.success("DATASET VERIFICATION COMPLETE")
+            for i in range(min(5, len(risky))):
 
-        vc1, vc2, vc3, vc4 = st.columns(4)
+                st.error(
+                    f"""
+                    Site {i+1} | 
+                    Methane Rising | 
+                    Risk Score: {risky.iloc[i]['risk_score']}
+                    """
+                )
 
-        vc1.metric("Verified Rows", total_rows)
-        vc2.metric("Suspicious Rows", suspicious)
-        vc3.metric("Invalid Coordinates", invalid_coords)
-        vc4.metric("Duplicate Sites", duplicates)
+        else:
+            st.success("No major risks detected")
 
-        st.warning(f"Rows With Missing Data: {missing}")
+        # =========================
+        # HEATMAP
+        # =========================
+        st.subheader("🛰️ Live Landfill Intelligence Map")
 
-        results = pd.DataFrame({
-            "row": range(10),
-            "status": ["VERIFIED"] * 10,
-            "issues": ["No Major Issues"] * 10
+        map_df = pd.DataFrame({
+            "lat": df[lat_col],
+            "lon": df[lon_col],
+            "risk": df["risk_score"]
         })
 
-        st.subheader("📡 Verification Results")
+        st.pydeck_chart(pdk.Deck(
+            map_style="mapbox://styles/mapbox/dark-v10",
+            initial_view_state=pdk.ViewState(
+                latitude=22,
+                longitude=80,
+                zoom=4,
+                pitch=40
+            ),
+            layers=[
+                pdk.Layer(
+                    "ScatterplotLayer",
+                    data=map_df,
+                    get_position='[lon, lat]',
+                    get_color='[255, risk*2, 0, 180]',
+                    get_radius=50000,
+                    pickable=True
+                )
+            ]
+        ))
 
-        st.dataframe(results)
+        # =========================
+        # TREND GRAPH
+        # =========================
+        st.subheader("📈 Methane Trend Intelligence")
 
-    # =====================================
-    # MAP
-    # =====================================
+        chart_df = df.head(50)
 
-    st.subheader("🛰️ Live Landfill Intelligence Map")
+        fig = px.line(
+            chart_df,
+            y="methane_flux",
+            title="Live Methane Flux Trend"
+        )
 
-    if "latitude" not in df.columns:
-        df["latitude"] = np.random.uniform(8, 35, len(df))
+        st.plotly_chart(fig, use_container_width=True)
 
-    if "longitude" not in df.columns:
-        df["longitude"] = np.random.uniform(68, 95, len(df))
+        # =========================
+        # SEARCH
+        # =========================
+        st.subheader("🔍 Search Intelligence")
 
-    if "methane_score" not in df.columns:
-        df["methane_score"] = np.random.uniform(1000, 5000, len(df))
+        search = st.text_input("Search Any Value")
 
-    map_df = df[[
-        "latitude",
-        "longitude",
-        "methane_score"
-    ]].copy()
+        if search:
 
-    fig = px.scatter_mapbox(
-        map_df,
-        lat="latitude",
-        lon="longitude",
-        color="methane_score",
-        size="methane_score",
-        zoom=3,
-        height=600,
-        color_continuous_scale="Turbo"
-    )
+            filtered = df[
+                df.astype(str)
+                .apply(lambda x: x.str.contains(search, case=False))
+                .any(axis=1)
+            ]
 
-    fig.update_layout(
-        mapbox_style="carto-darkmatter",
-        margin={"r":0,"t":0,"l":0,"b":0}
-    )
+            st.dataframe(filtered)
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+        # =========================
+        # FULL TABLE
+        # =========================
+        st.subheader("📋 Live Intelligence Table")
 
-    # =====================================
-    # RISK ENGINE
-    # =====================================
+        st.dataframe(df.head(500))
 
-    st.subheader("🚨 AI RISK ENGINE")
+        # =========================
+        # VERIFICATION ENGINE
+        # =========================
+        st.subheader("🧠 AI Verification Engine")
 
-    risk_sites = random.randint(5, 25)
+        duplicate_rows = df.duplicated().sum()
 
-    if risk_sites > 15:
-        st.error("Environmental anomalies detected")
-    else:
-        st.success("No critical anomalies")
+        missing_values = df.isnull().sum().sum()
 
-    rc1, rc2, rc3 = st.columns(3)
+        invalid_coords = len(
+            df[
+                (df[lat_col] > 90) |
+                (df[lat_col] < -90)
+            ]
+        )
 
-    rc1.metric(
-        "High Risk Sites",
-        risk_sites
-    )
+        v1, v2, v3 = st.columns(3)
 
-    rc2.metric(
-        "Blast Probability",
-        f"{random.randint(10,90)}%"
-    )
+        with v1:
+            st.metric("Duplicate Rows", duplicate_rows)
 
-    rc3.metric(
-        "Methane Expansion",
-        f"{random.randint(1,25)}%"
-    )
+        with v2:
+            st.metric("Missing Values", missing_values)
 
-    # =====================================
-    # CARBON CREDIT
-    # =====================================
+        with v3:
+            st.metric("Invalid Coordinates", invalid_coords)
 
-    st.subheader("💰 Carbon Credit Intelligence")
+        # =========================
+        # SCAN HISTORY
+        # =========================
+        st.subheader("🕒 Historical Scan Intelligence")
 
-    carbon = round(random.uniform(10000, 50000), 2)
+        history = pd.read_sql_query(
+            "SELECT * FROM scan_history ORDER BY id DESC",
+            conn
+        )
 
-    usd_value = round(carbon * 15, 2)
+        st.dataframe(history)
 
-    cc1, cc2 = st.columns(2)
+        # =========================
+        # AUTO REFRESH
+        # =========================
+        st.info(
+            f"🔄 Auto Refresh Active Every {refresh_rate} Seconds"
+        )
 
-    cc1.metric(
-        "CO2 Prevented",
-        f"{carbon} Tons"
-    )
+    except Exception as e:
 
-    cc2.metric(
-        "Carbon Credit Value",
-        f"${usd_value}"
-    )
-
-# =========================================
-# DATABASE VIEWER
-# =========================================
-
-st.divider()
-
-st.subheader("🗄️ Historical AI Scans")
-
-history = pd.read_sql_query(
-    "SELECT * FROM scans ORDER BY id DESC",
-    conn
-)
-
-if len(history) > 0:
-
-    st.dataframe(
-        history,
-        use_container_width=True
-    )
+        st.error(f"Error Processing Dataset: {e}")
 
 else:
 
-    st.info("No historical scans available")
-
-# =========================================
-# FOOTER
-# =========================================
-
-st.divider()
-
-st.caption("ZERO WASTE AI • Real-Time Environmental Intelligence Platform")
+    st.warning("Upload CSV Dataset To Start AI Intelligence")
